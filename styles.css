@@ -789,8 +789,8 @@ body {
 
 .pdf-page-paper {
   width: 100%;
-  max-width: 360px;
-  min-height: 480px;
+  max-width: 100%;
+  min-height: 520px;
   background-color: var(--md-paper-bg);
   color: var(--md-paper-text);
   border-radius: var(--radius-sm);

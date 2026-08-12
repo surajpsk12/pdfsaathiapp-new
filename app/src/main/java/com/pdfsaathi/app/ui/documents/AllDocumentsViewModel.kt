@@ -26,6 +26,12 @@ class AllDocumentsViewModel @Inject constructor(
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase
 ) : ViewModel() {
 
+    fun scanStorage() {
+        viewModelScope.launch {
+            pdfRepository.scanStorageForPdfs()
+        }
+    }
+
     val sortOption = MutableStateFlow(SortOption.NAME)
     val isAscending = MutableStateFlow(true)
 

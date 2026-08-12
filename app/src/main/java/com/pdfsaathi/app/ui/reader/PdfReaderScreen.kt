@@ -18,13 +18,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,12 +48,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.pdfsaathi.app.domain.model.ReadingTheme
+import com.pdfsaathi.app.ui.components.cleanDocumentTitle
 import com.pdfsaathi.app.ui.theme.SepiaSurface
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,16 +80,18 @@ fun PdfReaderScreen(
         viewModel.loadDocument(documentId)
     }
 
+    val displayTitle = cleanDocumentTitle(document?.name ?: "Document.pdf")
+
     val backgroundColor = when (theme) {
         ReadingTheme.LIGHT -> Color(0xFFF3F4F6)
-        ReadingTheme.DARK -> Color(0xFF18181B)
+        ReadingTheme.DARK -> Color(0xFF121212)
         ReadingTheme.SEPIA -> SepiaSurface
         ReadingTheme.SYSTEM -> MaterialTheme.colorScheme.background
     }
 
     val paperColor = when (theme) {
         ReadingTheme.LIGHT -> Color.White
-        ReadingTheme.DARK -> Color(0xFF27272A)
+        ReadingTheme.DARK -> Color(0xFF1E1E1E)
         ReadingTheme.SEPIA -> Color(0xFFFBF0D9)
         ReadingTheme.SYSTEM -> MaterialTheme.colorScheme.surface
     }
@@ -98,13 +102,14 @@ fun PdfReaderScreen(
             .background(backgroundColor)
             .clickable { viewModel.toggleControlsVisibility() }
     ) {
-        // PDF Canvas Viewer
+        // PDF Canvas Viewport (Full width edge-to-edge reading space)
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(vertical = 50.dp, horizontal = 4.dp)
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(1f, 4f)
+                        scale = (scale * zoom).coerceIn(1f, 5f)
                         if (scale > 1f) {
                             offsetX += pan.x
                             offsetY += pan.y
@@ -118,46 +123,55 @@ fun PdfReaderScreen(
         ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth(0.9f)
+                    .fillMaxSize()
                     .graphicsLayer(
                         scaleX = scale,
                         scaleY = scale,
                         translationX = offsetX,
                         translationY = offsetY
                     ),
-                shape = MaterialTheme.shapes.medium,
+                shape = RoundedCornerShape(8.dp),
                 color = paperColor,
-                shadowElevation = 6.dp
+                shadowElevation = 4.dp
             ) {
                 if (bitmap != null) {
                     Image(
                         bitmap = bitmap!!,
                         contentDescription = "PDF Page $page",
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
                     )
                 } else {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(480.dp)
+                            .fillMaxSize()
                             .padding(24.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = document?.name ?: "Loading PDF...",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            text = displayTitle,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            ),
                             color = if (theme == ReadingTheme.DARK) Color.White else Color.Black
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = "Page $page of $totalPages",
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
-                            text = "Page $page of $totalPages",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Pinch to zoom, double tap to reset. Offline PDF reader active.",
+                            text = "Pinch to zoom • Double tap to reset scale",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray
                         )
@@ -175,11 +189,22 @@ fun PdfReaderScreen(
         ) {
             TopAppBar(
                 title = {
-                    Text(
-                        text = document?.name ?: "PDF Reader",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Column {
+                        Text(
+                            text = displayTitle,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "Page $page of $totalPages",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -195,7 +220,7 @@ fun PdfReaderScreen(
                         )
                     }
                     IconButton(onClick = { viewModel.addBookmark() }) {
-                        Icon(Icons.Default.Bookmark, contentDescription = "Bookmark")
+                        Icon(Icons.Default.Bookmark, contentDescription = "Bookmark", tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = {
                         val nextTheme = when (theme) {
@@ -209,7 +234,7 @@ fun PdfReaderScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
                 )
             )
         }
@@ -223,10 +248,10 @@ fun PdfReaderScreen(
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                shadowElevation = 8.dp
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                shadowElevation = 12.dp
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -238,18 +263,19 @@ fun PdfReaderScreen(
                         ) {
                             Text(
                                 text = "$page / $totalPages",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
 
-                        Row {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { if (page > 1) viewModel.renderPage(page - 1) }) {
-                                Icon(Icons.Default.ChevronLeft, contentDescription = "Prev Page")
+                                Icon(Icons.Default.ChevronLeft, contentDescription = "Prev Page", modifier = Modifier.height(28.dp))
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
                             IconButton(onClick = { if (page < totalPages) viewModel.renderPage(page + 1) }) {
-                                Icon(Icons.Default.ChevronRight, contentDescription = "Next Page")
+                                Icon(Icons.Default.ChevronRight, contentDescription = "Next Page", modifier = Modifier.height(28.dp))
                             }
                         }
                     }
@@ -257,7 +283,8 @@ fun PdfReaderScreen(
                     Slider(
                         value = page.toFloat(),
                         onValueChange = { viewModel.renderPage(it.toInt()) },
-                        valueRange = 1f..totalPages.toFloat().coerceAtLeast(1f)
+                        valueRange = 1f..totalPages.toFloat().coerceAtLeast(1f),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

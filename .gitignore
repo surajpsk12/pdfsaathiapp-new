@@ -1,0 +1,44 @@
+# Built Android Artifacts & Packages
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# Gradle files & caches
+.gradle/
+build/
+*/build/
+app/build/
+
+# Local configuration file (contains SDK path)
+local.properties
+
+# Log Files
+*.log
+
+# Android Studio & IntelliJ IDE files
+.idea/
+.navigation/
+*.iml
+.idea/workspace.xml
+.idea/libraries/
+.idea/modules.xml
+.idea/tasks.xml
+.idea/caches/
+.idea/shelf/
+.idea/navEditor.xml
+
+# Keystores & Release Keys
+*.jks
+*.keystore
+*.pepk
+
+# Android Native Build files
+.externalNativeBuild/
+.cxx/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini

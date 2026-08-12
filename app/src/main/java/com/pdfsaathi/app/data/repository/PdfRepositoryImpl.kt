@@ -95,6 +95,66 @@ class PdfRepositoryImpl @Inject constructor(
         pdfDocumentDao.clearRecents()
     }
 
+    override suspend fun scanStorageForPdfs() {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val projection = arrayOf(
+                    android.provider.MediaStore.Files.FileColumns._ID,
+                    android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME,
+                    android.provider.MediaStore.Files.FileColumns.SIZE,
+                    android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED
+                )
+                val selection = "${android.provider.MediaStore.Files.FileColumns.MIME_TYPE} = ? OR ${android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE '%.pdf'"
+                val selectionArgs = arrayOf("application/pdf")
+                val sortOrder = "${android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
+
+                val cursor = context.contentResolver.query(
+                    android.provider.MediaStore.Files.getContentUri("external"),
+                    projection,
+                    selection,
+                    selectionArgs,
+                    sortOrder
+                )
+
+                cursor?.use { c ->
+                    val idCol = c.getColumnIndexOrThrow(android.provider.MediaStore.Files.FileColumns._ID)
+                    val nameCol = c.getColumnIndex(android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME)
+                    val sizeCol = c.getColumnIndex(android.provider.MediaStore.Files.FileColumns.SIZE)
+                    val dateCol = c.getColumnIndex(android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED)
+
+                    val entities = mutableListOf<PdfDocumentEntity>()
+                    while (c.moveToNext()) {
+                        val id = c.getLong(idCol)
+                        val contentUri = android.content.ContentUris.withAppendedId(
+                            android.provider.MediaStore.Files.getContentUri("external"), id
+                        ).toString()
+                        val name = if (nameCol != -1) c.getString(nameCol) ?: "Document.pdf" else "Document.pdf"
+                        val size = if (sizeCol != -1) c.getLong(sizeCol) else 0L
+                        val dateModified = if (dateCol != -1) c.getLong(dateCol) * 1000L else System.currentTimeMillis()
+
+                        val entity = PdfDocumentEntity(
+                            id = id.toString(),
+                            uri = contentUri,
+                            name = name,
+                            size = size,
+                            lastModified = dateModified,
+                            lastOpened = 0L,
+                            lastPage = 1,
+                            totalPages = 1,
+                            isFavorite = false
+                        )
+                        entities.add(entity)
+                    }
+                    if (entities.isNotEmpty()) {
+                        pdfDocumentDao.insertDocumentsIfNotExist(entities)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     override fun getBookmarksForDocument(documentId: String): Flow<List<Bookmark>> {
         return bookmarkDao.getBookmarksForDocument(documentId).map { list ->
             list.map { Bookmark(it.id, it.documentId, it.pageNumber, it.title, it.createdAt) }

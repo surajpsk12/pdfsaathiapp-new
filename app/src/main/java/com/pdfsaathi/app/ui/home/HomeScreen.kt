@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -33,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.pdfsaathi.app.domain.model.PdfDocument
 import com.pdfsaathi.app.ui.components.EmptyStateWidget
@@ -63,12 +65,25 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "PDF Saathi",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
+                    Column {
+                        Text(
+                            text = "PDF Saathi",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                        )
+                        Text(
+                            text = "${allDocs.size} PDFs found on device",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.scanStorage() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Scan Storage")
+                    }
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
@@ -88,15 +103,15 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 80.dp)
+            contentPadding = PaddingValues(bottom = 90.dp)
         ) {
             // Recents Section
             if (recents.isNotEmpty()) {
                 item {
                     Text(
                         text = "Recent Files",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
                     )
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -107,7 +122,7 @@ fun HomeScreen(
                                 document = doc,
                                 onClick = { onOpenReader(doc) },
                                 onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) },
-                                modifier = Modifier.width(260.dp)
+                                modifier = Modifier.width(280.dp)
                             )
                         }
                     }
@@ -117,18 +132,25 @@ fun HomeScreen(
 
             // All Documents Section
             item {
-                Text(
-                    text = "All Documents",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "All Documents",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
             }
 
             if (allDocs.isEmpty()) {
                 item {
                     EmptyStateWidget(
-                        title = "No PDFs Found",
-                        subtitle = "Tap the + button to select and open a PDF from your device storage."
+                        title = "Scanning Device for PDFs...",
+                        subtitle = "PDF Saathi is scanning internal & external storage for all .pdf files."
                     )
                 }
             } else {

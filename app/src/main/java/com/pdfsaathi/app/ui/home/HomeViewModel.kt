@@ -23,6 +23,16 @@ class HomeViewModel @Inject constructor(
     private val pdfRepository: PdfRepository
 ) : ViewModel() {
 
+    init {
+        scanStorage()
+    }
+
+    fun scanStorage() {
+        viewModelScope.launch {
+            pdfRepository.scanStorageForPdfs()
+        }
+    }
+
     val recentDocuments: StateFlow<List<PdfDocument>> = getRecentDocumentsUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

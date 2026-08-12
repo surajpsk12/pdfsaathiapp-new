@@ -16,6 +16,7 @@ interface PdfRepository {
     suspend fun toggleFavorite(id: String, isFavorite: Boolean)
     suspend fun saveReadingPosition(id: String, page: Int)
     suspend fun clearRecents()
+    suspend fun scanStorageForPdfs()
     
     // Bookmarks
     fun getBookmarksForDocument(documentId: String): Flow<List<Bookmark>>
