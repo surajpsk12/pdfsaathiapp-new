@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Saathi - Modern Android App UI</title>
+
+  <!-- Lucide Icon Library & Fonts -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Desktop Frame Control Bar -->
+    <div class="top-bar-controls">
+      <span>📱 PDF Saathi App UI Preview</span>
+      <button id="toggle-frame-btn">Toggle Frame / Fullscreen</button>
+      <button id="quick-splash-btn">Re-play Splash</button>
+    </div>
+
+    <!-- Android Mobile Device Frame -->
+    <div class="device-shell" id="device-shell">
+
+      <!-- Status Bar -->
+      <div class="android-status-bar">
+        <span id="status-time">22:11</span>
+        <div class="camera-cutout"></div>
+        <div class="status-bar-icons">
+          <i data-lucide="wifi"></i>
+          <i data-lucide="battery-charging"></i>
+        </div>
+      </div>
+
+      <!-- Viewport Screens -->
+      <div class="screen-viewport">
+
+        <!-- ==========================================
+             SCREEN 1: SPLASH SCREEN
+             ========================================== -->
+        <div class="screen active" id="screen-splash">
+          <div class="splash-logo-container">
+            <i data-lucide="file-text" class="splash-logo-icon"></i>
+          </div>
+          <h1 class="splash-title">PDF Saathi</h1>
+          <p class="splash-subtitle">Fast • Minimal • Offline Reader</p>
+
+          <div class="splash-loader">
+            <div class="splash-loader-bar"></div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 2: HOME SCREEN
+             ========================================== -->
+        <div class="screen" id="screen-home">
+          <!-- Top App Bar -->
+          <div class="top-app-bar">
+            <div class="app-bar-title">PDF Saathi</div>
+            <div class="app-bar-actions">
+              <button class="icon-btn" id="home-search-btn" title="Search"><i data-lucide="search"></i></button>
+              <button class="icon-btn" id="home-more-btn" title="More options"><i data-lucide="more-vertical"></i></button>
+            </div>
+          </div>
+
+          <!-- Main Scrollable Content Area -->
+          <div class="home-scroll-area">
+            <!-- 📂 Recent Files Section -->
+            <div class="section-header">
+              <span class="section-title"><i data-lucide="clock" style="width: 18px; color: var(--md-primary);"></i> Recent Files</span>
+              <span class="section-action" id="view-all-recents">View All</span>
+            </div>
+
+            <div class="horizontal-card-row" id="recents-card-row">
+              <!-- Dynamically populated horizontal cards -->
+            </div>
+
+            <!-- ⭐ Favorites Section -->
+            <div class="section-header" style="margin-top: 24px;">
+              <span class="section-title"><i data-lucide="star" style="width: 18px; color: #F59E0B;"></i> Favorites</span>
+              <span class="section-action" id="go-fav-tab">Manage</span>
+            </div>
+
+            <div class="horizontal-card-row" id="home-favs-row">
+              <!-- Dynamically populated fav cards -->
+            </div>
+
+            <!-- 📁 All Documents Section -->
+            <div class="section-header" style="margin-top: 24px;">
+              <span class="section-title"><i data-lucide="files" style="width: 18px; color: var(--md-secondary);"></i> All Documents</span>
+            </div>
+
+            <div class="doc-list-vertical" id="all-docs-list">
+              <!-- Dynamically populated vertical items -->
+            </div>
+          </div>
+
+          <!-- Floating Action Button (FAB) for File Import -->
+          <button class="fab-btn" id="fab-import-btn" title="Import PDF">
+            <i data-lucide="plus" style="width: 28px; height: 28px;"></i>
+          </button>
+          <input type="file" id="pdf-file-input" accept="application/pdf" style="display: none;">
+        </div>
+
+        <!-- ==========================================
+             SCREEN 3: FILE MANAGER SCREEN
+             ========================================== -->
+        <div class="screen" id="screen-files">
+          <div class="top-app-bar">
+            <div class="app-bar-title">File Explorer</div>
+            <div class="app-bar-actions">
+              <button class="icon-btn" id="new-folder-btn" title="New Folder"><i data-lucide="folder-plus"></i></button>
+            </div>
+          </div>
+
+          <!-- Breadcrumb Navigation -->
+          <div class="breadcrumbs-bar" id="breadcrumbs">
+            <span class="crumb-item active">Home</span>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="filter-toolbar">
+            <select class="sort-select" id="sort-dropdown">
+              <option value="name">Sort by Name</option>
+              <option value="date">Sort by Recent</option>
+              <option value="size">Sort by Size</option>
+            </select>
+
+            <div class="view-toggle-btns">
+              <button class="toggle-btn active" id="view-list-btn" title="List View"><i data-lucide="list"></i></button>
+              <button class="toggle-btn" id="view-grid-btn" title="Grid View"><i data-lucide="grid"></i></button>
+            </div>
+          </div>
+
+          <!-- File Explorer Scroll View -->
+          <div class="home-scroll-area" style="padding-top: 4px;">
+            <!-- Folders -->
+            <div class="folder-grid" id="folder-container">
+              <!-- Populated dynamically -->
+            </div>
+
+            <!-- Documents -->
+            <div class="section-title" style="margin-bottom: 10px;">Files</div>
+            <div id="file-explorer-content">
+              <!-- List or grid populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 4: PDF VIEWER SCREEN (Most Important)
+             ========================================== -->
+        <div class="screen" id="screen-viewer">
+          <!-- Top Bar -->
+          <div class="viewer-top-bar" id="viewer-top-bar">
+            <button class="icon-btn" id="viewer-back-btn" title="Back"><i data-lucide="arrow-left"></i></button>
+            <div class="viewer-title-box">
+              <div class="viewer-doc-title" id="viewer-doc-title">Data Structures.pdf</div>
+              <div class="viewer-doc-subtitle" id="viewer-doc-sub">Page 1 of 142</div>
+            </div>
+            <button class="icon-btn" id="viewer-star-btn" title="Favorite"><i data-lucide="star"></i></button>
+            <button class="icon-btn" id="viewer-search-btn" title="Search Text"><i data-lucide="search"></i></button>
+          </div>
+
+          <!-- Reading Scroll Area -->
+          <div class="pdf-scroll-viewport" id="pdf-scroll-viewport">
+            <!-- PDF Canvas/Paper Pages will be generated here -->
+          </div>
+
+          <!-- Floating Auto-Hide Action Buttons -->
+          <div class="floating-tools-bar" id="floating-tools">
+            <button class="float-tool-btn" id="float-bookmark-btn" title="Bookmark Page"><i data-lucide="bookmark"></i></button>
+
+            <button class="float-tool-btn" id="float-theme-btn" title="Theme Mode (Light/Dark/Sepia)"><i data-lucide="sun-moon"></i></button>
+          </div>
+
+          <!-- Bottom Controls Overlay -->
+          <div class="viewer-bottom-controls" id="viewer-bottom-bar">
+            <div class="page-seeker-row">
+              <span class="page-indicator-badge" id="page-badge">1 / 10</span>
+              <input type="range" min="1" max="10" value="1" class="page-slider" id="viewer-page-slider">
+            </div>
+
+            <div class="viewer-bottom-actions">
+              <button class="icon-btn" id="prev-page-btn" title="Previous Page"><i data-lucide="chevron-left"></i></button>
+              <button class="icon-btn" id="toggle-scroll-mode-btn" title="View Mode"><i data-lucide="columns"></i></button>
+              <button class="icon-btn" id="next-page-btn" title="Next Page"><i data-lucide="chevron-right"></i></button>
+            </div>
+          </div>
+
+          <!-- ==========================================
+               SCREEN 5: ANNOTATION TOOLBAR (Floating Overlay)
+               ========================================== -->
+          <div class="annotation-toolbar hidden" id="annotation-toolbar">
+            <button class="anno-tool-btn" id="tool-highlight" title="Highlight"><i data-lucide="highlighter"></i></button>
+            <button class="anno-tool-btn" id="tool-underline" title="Underline"><i data-lucide="underline"></i></button>
+            <button class="anno-tool-btn" id="tool-strikethrough" title="Strikethrough"><i data-lucide="strikethrough"></i></button>
+            <button class="anno-tool-btn" id="tool-note" title="Add Note"><i data-lucide="sticky-note"></i></button>
+
+            <div class="color-palette">
+              <div class="color-dot dot-yellow selected" data-color="#FEF08A"></div>
+              <div class="color-dot dot-green" data-color="#BBF7D0"></div>
+              <div class="color-dot dot-pink" data-color="#FBCFE8"></div>
+              <div class="color-dot dot-blue" data-color="#BAE6FD"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 6: FAVORITES SCREEN
+             ========================================== -->
+        <div class="screen" id="screen-favorites">
+          <div class="top-app-bar">
+            <div class="app-bar-title">Starred PDFs</div>
+          </div>
+
+          <div class="home-scroll-area" style="padding-top: 10px;">
+            <div class="doc-list-vertical" id="favs-full-list">
+              <!-- Dynamically populated or empty state -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 7: SETTINGS SCREEN
+             ========================================== -->
+        <div class="screen" id="screen-settings">
+          <div class="top-app-bar">
+            <div class="app-bar-title">Settings</div>
+          </div>
+
+          <div class="home-scroll-area">
+            <!-- Appearance Group -->
+            <div class="settings-group">
+              <div class="settings-group-title">Appearance & Theme</div>
+              <div class="settings-card">
+                <div class="settings-item">
+                  <div>
+                    <div class="settings-item-label">App Theme</div>
+                    <div class="settings-item-desc">Choose your preferred style</div>
+                  </div>
+                  <div class="segmented-control" id="theme-segmented">
+                    <button class="segmented-btn active" data-val="light">Light</button>
+                    <button class="segmented-btn" data-val="dark">Dark</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reading Defaults Group -->
+            <div class="settings-group">
+              <div class="settings-group-title">Reading Preferences</div>
+              <div class="settings-card">
+                <div class="settings-item">
+                  <div>
+                    <div class="settings-item-label">Default Viewer Mode</div>
+                    <div class="settings-item-desc">Continuous scroll or page-by-page</div>
+                  </div>
+                  <select class="sort-select" id="setting-default-mode">
+                    <option value="continuous">Continuous Scroll</option>
+                    <option value="single">Single Page</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Storage & Data -->
+            <div class="settings-group">
+              <div class="settings-group-title">Data & Storage</div>
+              <div class="settings-card">
+                <div class="settings-item" id="clear-recents-btn">
+                  <div>
+                    <div class="settings-item-label" style="color: #EF4444;">Clear Recent History</div>
+                    <div class="settings-item-desc">Resets recent document list</div>
+                  </div>
+                  <i data-lucide="trash-2" style="color: #EF4444;"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- About Section -->
+            <div class="settings-group">
+              <div class="settings-group-title">About</div>
+              <div class="settings-card">
+                <div class="settings-item">
+                  <div>
+                    <div class="settings-item-label">PDF Saathi App</div>
+                    <div class="settings-item-desc">Version 1.0.0 • Offline-first build</div>
+                  </div>
+                  <span style="font-size: 0.75rem; background: var(--md-primary-container); color: var(--md-primary); padding: 4px 8px; border-radius: var(--radius-pill); font-weight: 700;">Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- /screen-viewport -->
+
+      <!-- Bottom Navigation Bar (Persistent across main screens) -->
+      <div class="bottom-nav-bar" id="main-bottom-nav">
+        <button class="nav-item active" data-target="screen-home">
+          <div class="nav-icon-pill"><i data-lucide="home"></i></div>
+          <span>Home</span>
+        </button>
+
+        <button class="nav-item" data-target="screen-files">
+          <div class="nav-icon-pill"><i data-lucide="folder"></i></div>
+          <span>Files</span>
+        </button>
+
+        <button class="nav-item" data-target="screen-favorites">
+          <div class="nav-icon-pill"><i data-lucide="star"></i></div>
+          <span>Favorites</span>
+        </button>
+
+        <button class="nav-item" data-target="screen-settings">
+          <div class="nav-icon-pill"><i data-lucide="settings"></i></div>
+          <span>Settings</span>
+        </button>
+      </div>
+
+      <!-- Toast Notification -->
+      <div class="toast-msg" id="toast">Notification Message</div>
+
+      <!-- Clear Recents Modal -->
+      <div class="modal-overlay" id="clear-modal">
+        <div class="modal-dialog">
+          <div class="modal-title">Clear Recent Files?</div>
+          <div class="modal-body">This will remove all recent files from your home history. Your files will not be deleted from storage.</div>
+          <div class="modal-actions">
+            <button class="btn-secondary" id="modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="modal-confirm-btn" style="background: #EF4444;">Clear</button>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- /device-shell -->
+
+  </div>
+
+  <script src="sample-pdf.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
