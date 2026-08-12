@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pdfsaathi.app.data.pdf.PdfRendererManager
+import com.pdfsaathi.app.data.repository.SettingsRepository
 import com.pdfsaathi.app.domain.model.Bookmark
 import com.pdfsaathi.app.domain.model.PdfDocument
 import com.pdfsaathi.app.domain.model.ReadingTheme
@@ -17,9 +18,7 @@ import com.pdfsaathi.app.domain.usecase.ToggleFavoriteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,15 +29,20 @@ class PdfReaderViewModel @Inject constructor(
     private val pdfRendererManager: PdfRendererManager,
     private val saveReadingPositionUseCase: SaveReadingPositionUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val manageBookmarksUseCase: ManageBookmarksUseCase
+    private val manageBookmarksUseCase: ManageBookmarksUseCase,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     val currentDocument = MutableStateFlow<PdfDocument?>(null)
     val currentPage = MutableStateFlow(1)
     val totalPages = MutableStateFlow(1)
-    val readingTheme = MutableStateFlow(ReadingTheme.LIGHT)
+    val readingTheme = MutableStateFlow(settingsRepository.appTheme.value)
+    val viewerMode = MutableStateFlow(settingsRepository.defaultViewerMode.value)
     val isControlsVisible = MutableStateFlow(true)
     val currentPageBitmap = MutableStateFlow<ImageBitmap?>(null)
+
+    // Map storing rendered page bitmaps for Continuous Scroll Mode
+    val pageBitmaps = MutableStateFlow<Map<Int, ImageBitmap>>(emptyMap())
 
     // In-PDF Text Search
     val pdfSearchQuery = MutableStateFlow("")
@@ -55,23 +59,51 @@ class PdfReaderViewModel @Inject constructor(
                 pdfRepository.getDocumentById(documentId)
             }
 
-            doc?.let {
-                currentDocument.value = it
-                currentPage.value = it.lastPage
-                val count = pdfRendererManager.openDocument(context, Uri.parse(it.uri))
-                totalPages.value = if (count > 0) count else 15
-                renderPage(it.lastPage)
+            doc?.let { pdfDoc ->
+                currentDocument.value = pdfDoc
+                val realCount = pdfRendererManager.openDocument(context, Uri.parse(pdfDoc.uri), pdfDoc.id)
+                val validTotalPages = if (realCount > 0) realCount else 1
+                totalPages.value = validTotalPages
+
+                val safeLastPage = pdfDoc.lastPage.coerceIn(1, validTotalPages)
+                currentPage.value = safeLastPage
+
+                // Update accurate total pages & page position in database
+                pdfRepository.updateTotalPages(pdfDoc.id, validTotalPages)
+                saveReadingPositionUseCase(pdfDoc.id, safeLastPage)
+
+                renderPage(safeLastPage)
             }
         }
     }
 
     fun renderPage(pageIndex: Int) {
         viewModelScope.launch {
-            currentPage.value = pageIndex
-            val bitmap = pdfRendererManager.renderPage(pageIndex - 1)
-            currentPageBitmap.value = bitmap
+            val validPage = pageIndex.coerceIn(1, totalPages.value)
+            currentPage.value = validPage
+
+            val bitmap = pdfRendererManager.renderPageBitmap(validPage - 1)
+            if (bitmap != null) {
+                currentPageBitmap.value = bitmap
+                val currentMap = pageBitmaps.value.toMutableMap()
+                currentMap[validPage] = bitmap
+                pageBitmaps.value = currentMap
+            }
+
             currentDocument.value?.id?.let { id ->
-                saveReadingPositionUseCase(id, pageIndex)
+                saveReadingPositionUseCase(id, validPage)
+            }
+        }
+    }
+
+    fun loadPageBitmapForContinuous(pageIndex: Int) {
+        if (pageBitmaps.value.containsKey(pageIndex)) return
+        viewModelScope.launch {
+            val bitmap = pdfRendererManager.renderPageBitmap(pageIndex - 1)
+            if (bitmap != null) {
+                val currentMap = pageBitmaps.value.toMutableMap()
+                currentMap[pageIndex] = bitmap
+                pageBitmaps.value = currentMap
             }
         }
     }
@@ -86,6 +118,10 @@ class PdfReaderViewModel @Inject constructor(
             toggleFavoriteUseCase(doc.id, !doc.isFavorite)
             currentDocument.value = doc.copy(isFavorite = !doc.isFavorite)
         }
+    }
+
+    fun toggleViewerMode() {
+        viewerMode.value = if (viewerMode.value == "continuous") "single" else "continuous"
     }
 
     fun addBookmark() {

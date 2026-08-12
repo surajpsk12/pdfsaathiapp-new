@@ -8,14 +8,22 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import com.pdfsaathi.app.data.repository.SettingsRepository
+import com.pdfsaathi.app.domain.model.ReadingTheme
 import com.pdfsaathi.app.ui.navigation.PdfNavGraph
 import com.pdfsaathi.app.ui.theme.PDFSaathiTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
 
     private val externalPdfUri = mutableStateOf<Uri?>(null)
 
@@ -25,7 +33,10 @@ class MainActivity : ComponentActivity() {
         handleIncomingIntent(intent)
 
         setContent {
-            PDFSaathiTheme {
+            val appTheme by settingsRepository.appTheme.collectAsState()
+            val isDarkTheme = appTheme == ReadingTheme.DARK
+
+            PDFSaathiTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

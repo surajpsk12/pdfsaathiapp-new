@@ -91,6 +91,10 @@ class PdfRepositoryImpl @Inject constructor(
         pdfDocumentDao.updateReadingPosition(id, page)
     }
 
+    override suspend fun updateTotalPages(id: String, totalPages: Int) {
+        pdfDocumentDao.updateDocumentTotalPages(id, totalPages)
+    }
+
     override suspend fun clearRecents() {
         pdfDocumentDao.clearRecents()
     }

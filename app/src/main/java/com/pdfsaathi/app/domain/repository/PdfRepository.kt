@@ -15,6 +15,7 @@ interface PdfRepository {
     suspend fun importDocumentFromUri(uri: Uri): PdfDocument?
     suspend fun toggleFavorite(id: String, isFavorite: Boolean)
     suspend fun saveReadingPosition(id: String, page: Int)
+    suspend fun updateTotalPages(id: String, totalPages: Int)
     suspend fun clearRecents()
     suspend fun scanStorageForPdfs()
     

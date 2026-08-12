@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -30,11 +31,13 @@ import com.pdfsaathi.app.ui.favorites.FavoritesScreen
 import com.pdfsaathi.app.ui.home.HomeScreen
 import com.pdfsaathi.app.ui.reader.PdfReaderScreen
 import com.pdfsaathi.app.ui.search.SearchScreen
+import com.pdfsaathi.app.ui.settings.SettingsScreen
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
     object Home : Screen("home", "Home", Icons.Default.Home)
     object Documents : Screen("documents", "Files", Icons.Default.Folder)
     object Favorites : Screen("favorites", "Favorites", Icons.Default.Star)
+    object Settings : Screen("settings", "Settings", Icons.Default.Settings)
     object Search : Screen("search", "Search", Icons.Default.Search)
     object Reader : Screen("reader/{documentId}", "Reader") {
         fun createRoute(documentId: String) = "reader/${Uri.encode(documentId)}"
@@ -53,7 +56,7 @@ fun PdfNavGraph(
         Screen.Home,
         Screen.Documents,
         Screen.Favorites,
-        Screen.Search
+        Screen.Settings
     )
 
     val showBottomBar = currentRoute in bottomNavItems.map { it.route }
@@ -101,13 +104,17 @@ fun PdfNavGraph(
             }
             composable(Screen.Documents.route) {
                 AllDocumentsScreen(
-                    onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) }
+                    onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) },
+                    onBackClick = { navController.navigate(Screen.Home.route) }
                 )
             }
             composable(Screen.Favorites.route) {
                 FavoritesScreen(
                     onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) }
                 )
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen()
             }
             composable(Screen.Search.route) {
                 SearchScreen(

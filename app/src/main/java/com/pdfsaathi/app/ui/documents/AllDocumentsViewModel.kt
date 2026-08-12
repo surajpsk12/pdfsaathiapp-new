@@ -26,26 +26,36 @@ class AllDocumentsViewModel @Inject constructor(
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase
 ) : ViewModel() {
 
+    val sortOption = MutableStateFlow(SortOption.NAME)
+    val isAscending = MutableStateFlow(true)
+    val selectedFolder = MutableStateFlow<String?>(null)
+
     fun scanStorage() {
         viewModelScope.launch {
             pdfRepository.scanStorageForPdfs()
         }
     }
 
-    val sortOption = MutableStateFlow(SortOption.NAME)
-    val isAscending = MutableStateFlow(true)
+    fun selectFolder(folderName: String?) {
+        selectedFolder.value = folderName
+    }
 
     val documents: StateFlow<List<PdfDocument>> = combine(
         pdfRepository.getAllDocuments(),
         sortOption,
-        isAscending
-    ) { docs, option, asc ->
-        val sorted = when (option) {
-            SortOption.NAME -> docs.sortedBy { it.name.lowercase() }
-            SortOption.DATE -> docs.sortedBy { it.lastModified }
-            SortOption.SIZE -> docs.sortedBy { it.size }
+        selectedFolder
+    ) { docs, option, folder ->
+        val filtered = if (folder == null) {
+            docs
+        } else {
+            docs.filter { it.name.contains(folder, ignoreCase = true) || folder.contains("Semester", ignoreCase = true) }
         }
-        if (asc) sorted else sorted.reversed()
+
+        when (option) {
+            SortOption.NAME -> filtered.sortedBy { it.name.lowercase() }
+            SortOption.DATE -> filtered.sortedByDescending { it.lastModified }
+            SortOption.SIZE -> filtered.sortedByDescending { it.size }
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun toggleFavorite(documentId: String, currentStatus: Boolean) {

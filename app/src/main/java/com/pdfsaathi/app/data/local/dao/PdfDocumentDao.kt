@@ -41,6 +41,9 @@ interface PdfDocumentDao {
     @Query("UPDATE pdf_documents SET lastPage = :page, lastOpened = :timestamp WHERE id = :id")
     suspend fun updateReadingPosition(id: String, page: Int, timestamp: Long = System.currentTimeMillis())
 
+    @Query("UPDATE pdf_documents SET totalPages = :totalPages WHERE id = :id")
+    suspend fun updateDocumentTotalPages(id: String, totalPages: Int)
+
     @Query("UPDATE pdf_documents SET isFavorite = :isFavorite WHERE id = :id")
     suspend fun updateFavoriteState(id: String, isFavorite: Boolean)
 

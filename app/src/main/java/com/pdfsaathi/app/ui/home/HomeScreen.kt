@@ -118,11 +118,51 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(recents) { doc ->
-                            PdfDocumentCardRow(
+                            val context = androidx.compose.ui.platform.LocalContext.current
+                            com.pdfsaathi.app.ui.components.RecentCardItem(
                                 document = doc,
                                 onClick = { onOpenReader(doc) },
-                                onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) },
-                                modifier = Modifier.width(280.dp)
+                                onShare = {
+                                    try {
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "application/pdf"
+                                            putExtra(android.content.Intent.EXTRA_STREAM, android.net.Uri.parse(doc.uri))
+                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(intent, "Share ${doc.name}"))
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                },
+                                onDownload = {
+                                    android.widget.Toast.makeText(context, "${doc.name} saved to offline library", android.widget.Toast.LENGTH_SHORT).show()
+                                },
+                                onDelete = {
+                                    viewModel.toggleFavorite(doc.id, false)
+                                }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+            // Favorites Section
+            if (favorites.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Favorites",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                    )
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(favorites) { doc ->
+                            com.pdfsaathi.app.ui.components.FavCardItem(
+                                document = doc,
+                                onClick = { onOpenReader(doc) }
                             )
                         }
                     }
