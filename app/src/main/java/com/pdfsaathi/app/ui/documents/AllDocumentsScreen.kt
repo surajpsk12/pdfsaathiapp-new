@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -61,6 +63,7 @@ fun AllDocumentsScreen(
     val currentSort by viewModel.sortOption.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
     var isGridView by remember { mutableStateOf(false) }
+    var documentToDelete by remember { mutableStateOf<PdfDocument?>(null) }
 
     Scaffold(
         topBar = {
@@ -203,7 +206,8 @@ fun AllDocumentsScreen(
                         PdfDocumentCardRow(
                             document = doc,
                             onClick = { onOpenReader(doc) },
-                            onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) }
+                            onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) },
+                            onDelete = { documentToDelete = doc }
                         )
                     }
                 }
@@ -217,11 +221,36 @@ fun AllDocumentsScreen(
                         PdfDocumentCardRow(
                             document = doc,
                             onClick = { onOpenReader(doc) },
-                            onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) }
+                            onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) },
+                            onDelete = { documentToDelete = doc }
                         )
                     }
                 }
             }
+        }
+
+        // Delete Confirmation Dialog
+        documentToDelete?.let { doc ->
+            AlertDialog(
+                onDismissRequest = { documentToDelete = null },
+                title = { Text("Delete Document?") },
+                text = { Text("Are you sure you want to remove '${doc.name}' from PDF Saathi library?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteDocument(doc.id)
+                            documentToDelete = null
+                        }
+                    ) {
+                        Text("Delete", color = androidx.compose.ui.graphics.Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { documentToDelete = null }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

@@ -18,6 +18,7 @@ interface PdfRepository {
     suspend fun updateTotalPages(id: String, totalPages: Int)
     suspend fun clearRecents()
     suspend fun scanStorageForPdfs()
+    suspend fun deleteDocument(id: String)
     
     // Bookmarks
     fun getBookmarksForDocument(documentId: String): Flow<List<Bookmark>>

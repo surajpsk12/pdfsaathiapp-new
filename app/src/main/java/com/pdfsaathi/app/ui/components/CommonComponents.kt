@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
@@ -60,9 +61,11 @@ fun PdfDocumentCardRow(
     document: PdfDocument,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onDelete: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val displayTitle = cleanDocumentTitle(document.name)
+    var showMenu by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
@@ -149,6 +152,16 @@ fun PdfDocumentCardRow(
                     contentDescription = "Favorite",
                     tint = if (document.isFavorite) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            if (onDelete != null) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete Document",
+                        tint = Color(0xFFEF4444)
+                    )
+                }
             }
         }
     }

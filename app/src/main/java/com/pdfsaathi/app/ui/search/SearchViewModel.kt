@@ -16,11 +16,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.pdfsaathi.app.domain.repository.PdfRepository
+
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchDocumentsUseCase: SearchDocumentsUseCase,
-    private val toggleFavoriteUseCase: ToggleFavoriteUseCase
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val pdfRepository: PdfRepository
 ) : ViewModel() {
 
     val searchQuery = MutableStateFlow("")
@@ -33,6 +36,12 @@ class SearchViewModel @Inject constructor(
     fun toggleFavorite(documentId: String, currentStatus: Boolean) {
         viewModelScope.launch {
             toggleFavoriteUseCase(documentId, !currentStatus)
+        }
+    }
+
+    fun deleteDocument(documentId: String) {
+        viewModelScope.launch {
+            pdfRepository.deleteDocument(documentId)
         }
     }
 }

@@ -36,6 +36,7 @@ class PdfReaderViewModel @Inject constructor(
     val currentDocument = MutableStateFlow<PdfDocument?>(null)
     val currentPage = MutableStateFlow(1)
     val totalPages = MutableStateFlow(1)
+    val initialRestoredPage = MutableStateFlow<Int?>(null)
     val readingTheme = MutableStateFlow(settingsRepository.appTheme.value)
     val viewerMode = MutableStateFlow(settingsRepository.defaultViewerMode.value)
     val isControlsVisible = MutableStateFlow(true)
@@ -53,24 +54,47 @@ class PdfReaderViewModel @Inject constructor(
 
     fun loadDocument(documentId: String) {
         viewModelScope.launch {
-            val doc = if (documentId.startsWith("content://") || documentId.startsWith("file://")) {
+            var doc = if (documentId.startsWith("content://") || documentId.startsWith("file://") || documentId.contains("/")) {
                 pdfRepository.importDocumentFromUri(Uri.parse(documentId))
             } else {
                 pdfRepository.getDocumentById(documentId)
             }
 
+            if (doc == null) {
+                doc = pdfRepository.getDocumentByUri(documentId)
+            }
+
+            if (doc == null && (documentId.startsWith("content://") || documentId.startsWith("file://") || documentId.contains("/"))) {
+                val uri = Uri.parse(documentId)
+                val name = com.pdfsaathi.app.utils.FileUtil.getFileName(context, uri)
+                doc = PdfDocument(
+                    id = documentId,
+                    uri = documentId,
+                    name = name,
+                    size = 0L,
+                    formattedSize = "",
+                    lastModified = System.currentTimeMillis(),
+                    formattedDate = "",
+                    lastOpened = System.currentTimeMillis(),
+                    lastPage = 1,
+                    totalPages = 1,
+                    isFavorite = false
+                )
+            }
+
             doc?.let { pdfDoc ->
                 currentDocument.value = pdfDoc
-                val realCount = pdfRendererManager.openDocument(context, Uri.parse(pdfDoc.uri), pdfDoc.id)
+                val targetUri = try { Uri.parse(pdfDoc.uri) } catch (e: Exception) { Uri.EMPTY }
+                val realCount = pdfRendererManager.openDocument(context, targetUri, pdfDoc.id)
                 val validTotalPages = if (realCount > 0) realCount else 1
                 totalPages.value = validTotalPages
 
                 val safeLastPage = pdfDoc.lastPage.coerceIn(1, validTotalPages)
                 currentPage.value = safeLastPage
 
-                // Update accurate total pages & page position in database
+                // Update accurate total pages in database
                 pdfRepository.updateTotalPages(pdfDoc.id, validTotalPages)
-                saveReadingPositionUseCase(pdfDoc.id, safeLastPage)
+                initialRestoredPage.value = safeLastPage
 
                 renderPage(safeLastPage)
             }
@@ -92,6 +116,14 @@ class PdfReaderViewModel @Inject constructor(
 
             currentDocument.value?.id?.let { id ->
                 saveReadingPositionUseCase(id, validPage)
+            }
+
+            // Pre-load adjacent pages for seamless horizontal swipe transitions
+            if (validPage > 1) {
+                loadPageBitmapForContinuous(validPage - 1)
+            }
+            if (validPage < totalPages.value) {
+                loadPageBitmapForContinuous(validPage + 1)
             }
         }
     }

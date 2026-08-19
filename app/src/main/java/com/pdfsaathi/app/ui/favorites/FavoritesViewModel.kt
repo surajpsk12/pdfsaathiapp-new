@@ -12,10 +12,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.pdfsaathi.app.domain.repository.PdfRepository
+
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
     getFavoriteDocumentsUseCase: GetFavoriteDocumentsUseCase,
-    private val toggleFavoriteUseCase: ToggleFavoriteUseCase
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val pdfRepository: PdfRepository
 ) : ViewModel() {
 
     val favorites: StateFlow<List<PdfDocument>> = getFavoriteDocumentsUseCase()
@@ -24,6 +27,12 @@ class FavoritesViewModel @Inject constructor(
     fun removeFavorite(documentId: String) {
         viewModelScope.launch {
             toggleFavoriteUseCase(documentId, false)
+        }
+    }
+
+    fun deleteDocument(documentId: String) {
+        viewModelScope.launch {
+            pdfRepository.deleteDocument(documentId)
         }
     }
 }

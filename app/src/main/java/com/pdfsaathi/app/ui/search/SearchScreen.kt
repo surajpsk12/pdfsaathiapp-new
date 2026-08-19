@@ -22,7 +22,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.pdfsaathi.app.domain.model.PdfDocument
@@ -37,6 +39,7 @@ fun SearchScreen(
 ) {
     val query by viewModel.searchQuery.collectAsState()
     val results by viewModel.searchResults.collectAsState()
+    var documentToDelete by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<PdfDocument?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Search PDFs") }) }
@@ -80,11 +83,36 @@ fun SearchScreen(
                         PdfDocumentCardRow(
                             document = doc,
                             onClick = { onOpenReader(doc) },
-                            onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) }
+                            onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) },
+                            onDelete = { documentToDelete = doc }
                         )
                     }
                 }
             }
+        }
+
+        // Delete Confirmation Dialog
+        documentToDelete?.let { doc ->
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { documentToDelete = null },
+                title = { Text("Delete Document?") },
+                text = { Text("Are you sure you want to remove '${doc.name}' from PDF Saathi library?") },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            viewModel.deleteDocument(doc.id)
+                            documentToDelete = null
+                        }
+                    ) {
+                        Text("Delete", color = androidx.compose.ui.graphics.Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(onClick = { documentToDelete = null }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

@@ -99,6 +99,20 @@ class PdfRepositoryImpl @Inject constructor(
         pdfDocumentDao.clearRecents()
     }
 
+    override suspend fun deleteDocument(id: String) {
+        pdfDocumentDao.deleteDocument(id)
+        try {
+            val safeFileName = "${id.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
+            val pdfDir = java.io.File(context.filesDir, "saved_pdfs")
+            val cachedFile = java.io.File(pdfDir, safeFileName)
+            if (cachedFile.exists()) {
+                cachedFile.delete()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     override suspend fun scanStorageForPdfs() {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
@@ -106,7 +120,8 @@ class PdfRepositoryImpl @Inject constructor(
                     android.provider.MediaStore.Files.FileColumns._ID,
                     android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME,
                     android.provider.MediaStore.Files.FileColumns.SIZE,
-                    android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED
+                    android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED,
+                    android.provider.MediaStore.Files.FileColumns.DATA
                 )
                 val selection = "${android.provider.MediaStore.Files.FileColumns.MIME_TYPE} = ? OR ${android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE '%.pdf'"
                 val selectionArgs = arrayOf("application/pdf")
@@ -125,6 +140,7 @@ class PdfRepositoryImpl @Inject constructor(
                     val nameCol = c.getColumnIndex(android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME)
                     val sizeCol = c.getColumnIndex(android.provider.MediaStore.Files.FileColumns.SIZE)
                     val dateCol = c.getColumnIndex(android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED)
+                    val dataCol = c.getColumnIndex(android.provider.MediaStore.Files.FileColumns.DATA)
 
                     val entities = mutableListOf<PdfDocumentEntity>()
                     while (c.moveToNext()) {
@@ -132,13 +148,16 @@ class PdfRepositoryImpl @Inject constructor(
                         val contentUri = android.content.ContentUris.withAppendedId(
                             android.provider.MediaStore.Files.getContentUri("external"), id
                         ).toString()
+                        val filePath = if (dataCol != -1) c.getString(dataCol) else null
+                        val finalUri = if (!filePath.isNullOrBlank() && java.io.File(filePath).exists()) filePath else contentUri
+
                         val name = if (nameCol != -1) c.getString(nameCol) ?: "Document.pdf" else "Document.pdf"
                         val size = if (sizeCol != -1) c.getLong(sizeCol) else 0L
                         val dateModified = if (dateCol != -1) c.getLong(dateCol) * 1000L else System.currentTimeMillis()
 
                         val entity = PdfDocumentEntity(
                             id = id.toString(),
-                            uri = contentUri,
+                            uri = finalUri,
                             name = name,
                             size = size,
                             lastModified = dateModified,
@@ -150,7 +169,16 @@ class PdfRepositoryImpl @Inject constructor(
                         entities.add(entity)
                     }
                     if (entities.isNotEmpty()) {
-                        pdfDocumentDao.insertDocumentsIfNotExist(entities)
+                        for (entity in entities) {
+                            val existing = pdfDocumentDao.getDocumentById(entity.id)
+                            if (existing != null) {
+                                if (existing.uri != entity.uri) {
+                                    pdfDocumentDao.updateDocument(existing.copy(uri = entity.uri))
+                                }
+                            } else {
+                                pdfDocumentDao.insertDocument(entity)
+                            }
+                        }
                     }
                 }
             } catch (e: Exception) {

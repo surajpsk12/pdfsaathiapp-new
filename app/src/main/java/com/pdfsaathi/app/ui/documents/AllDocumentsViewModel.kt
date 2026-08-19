@@ -63,4 +63,10 @@ class AllDocumentsViewModel @Inject constructor(
             toggleFavoriteUseCase(documentId, !currentStatus)
         }
     }
+
+    fun deleteDocument(documentId: String) {
+        viewModelScope.launch {
+            pdfRepository.deleteDocument(documentId)
+        }
+    }
 }

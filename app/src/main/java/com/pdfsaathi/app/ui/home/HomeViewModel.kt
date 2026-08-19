@@ -54,4 +54,10 @@ class HomeViewModel @Inject constructor(
             doc?.let { onImported(it) }
         }
     }
+
+    fun deleteDocument(documentId: String) {
+        viewModelScope.launch {
+            pdfRepository.deleteDocument(documentId)
+        }
+    }
 }
