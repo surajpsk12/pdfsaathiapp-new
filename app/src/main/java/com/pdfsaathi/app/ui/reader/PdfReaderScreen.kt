@@ -44,10 +44,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Palette
@@ -126,6 +126,7 @@ fun PdfReaderScreen(
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
     var showJumpDialog by remember { mutableStateOf(false) }
+    var showIconHelpDialog by remember { mutableStateOf(false) }
     var jumpTargetPage by remember { mutableIntStateOf(page) }
     var hasRestoredInitialScroll by remember { mutableStateOf(false) }
     var inputPassword by remember { mutableStateOf("") }
@@ -204,7 +205,6 @@ fun PdfReaderScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
-            .clickable { viewModel.toggleControlsVisibility() }
     ) {
         // Continuous Scroll Mode View (Vertical Scroll)
         if (viewerMode == "continuous") {
@@ -360,7 +360,7 @@ fun PdfReaderScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 10.dp, vertical = 10.dp)
+                        .padding(top = 68.dp, bottom = 80.dp, start = 10.dp, end = 10.dp)
                         .clipToBounds()
                         .pointerInput(Unit) {
                             detectTapGestures(
@@ -488,71 +488,69 @@ fun PdfReaderScreen(
             }
         }
 
-        // Top Bar Overlay
-        AnimatedVisibility(
-            visible = showControls,
-            enter = fadeIn(),
-            exit = fadeOut(),
+        // Permanent Top Bar Header
+        TopAppBar(
+            title = {
+                Column {
+                    Text(
+                        text = displayTitle,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "Page $page of $totalPages",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+            },
+            actions = {
+                IconButton(onClick = { viewModel.toggleTextSelectionMode() }) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Text Selection & Copy",
+                        tint = if (isTextSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                IconButton(onClick = { viewModel.toggleViewerMode() }) {
+                    Icon(
+                        imageVector = Icons.Default.ViewAgenda,
+                        contentDescription = "Viewer Mode",
+                        tint = if (viewerMode == "continuous") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                IconButton(onClick = {
+                    val nextTheme = when (theme) {
+                        ReadingTheme.LIGHT -> ReadingTheme.DARK
+                        ReadingTheme.DARK -> ReadingTheme.SEPIA
+                        else -> ReadingTheme.LIGHT
+                    }
+                    viewModel.changeTheme(nextTheme)
+                }) {
+                    Icon(Icons.Default.Palette, contentDescription = "Change Reader Theme")
+                }
+                IconButton(onClick = { showIconHelpDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Icon Features & Help Guide",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+            ),
             modifier = Modifier.align(Alignment.TopCenter)
-        ) {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = displayTitle,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = "Page $page of $totalPages",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.toggleTextSelectionMode() }) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "Text Selection & Copy",
-                            tint = if (isTextSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { viewModel.toggleViewerMode() }) {
-                        Icon(
-                            imageVector = Icons.Default.ViewAgenda,
-                            contentDescription = "Viewer Mode",
-                            tint = if (viewerMode == "continuous") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { viewModel.addBookmark() }) {
-                        Icon(Icons.Default.Bookmark, contentDescription = "Bookmark", tint = MaterialTheme.colorScheme.primary)
-                    }
-                    IconButton(onClick = {
-                        val nextTheme = when (theme) {
-                            ReadingTheme.LIGHT -> ReadingTheme.DARK
-                            ReadingTheme.DARK -> ReadingTheme.SEPIA
-                            else -> ReadingTheme.LIGHT
-                        }
-                        viewModel.changeTheme(nextTheme)
-                    }) {
-                        Icon(Icons.Default.Palette, contentDescription = "Theme")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-                )
-            )
-        }
+        )
 
         // Bottom Seeker Controls Overlay (Only for Single/Horizontal Page Mode)
         if (viewerMode == "single") {
@@ -865,6 +863,156 @@ fun PdfReaderScreen(
                 dismissButton = {
                     TextButton(onClick = { viewModel.toggleTextSelectionMode() }) {
                         Text("Close")
+                    }
+                }
+            )
+        }
+
+        // Icon Features & Help Guide Dialog
+        if (showIconHelpDialog) {
+            AlertDialog(
+                onDismissRequest = { showIconHelpDialog = false },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Help Guide",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = "Reader Icon Features Guide",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text(
+                            text = "Here is what each icon in the reader bar does:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        // Feature 1: Text Selection & Copy
+                        Row(verticalAlignment = Alignment.Top) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(6.dp).size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Text Selection & Copy",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "Extracts page text to tap, select, copy, Google search, or share snippets.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        // Feature 2: View Mode
+                        Row(verticalAlignment = Alignment.Top) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ViewAgenda,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(6.dp).size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "View Mode Switch",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "Toggle between Single Page Mode (horizontal slide) and Continuous Scroll Mode.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        // Feature 4: Theme Changer
+                        Row(verticalAlignment = Alignment.Top) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Palette,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(6.dp).size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Reader Theme",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "Cycles reading background between Light Mode, Dark Mode, and Sepia Mode.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        // Feature 5: Floating Seeker Bar
+                        Row(verticalAlignment = Alignment.Top) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Navigation,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(6.dp).size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Page Jump & Slider",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "Drag the bottom slider or tap the page counter pill to jump to any page.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showIconHelpDialog = false }) {
+                        Text("Got It!", fontWeight = FontWeight.Bold)
                     }
                 }
             )
