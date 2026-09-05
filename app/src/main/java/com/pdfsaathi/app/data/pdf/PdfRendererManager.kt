@@ -282,6 +282,32 @@ class PdfRendererManager @Inject constructor() {
         }
     }
 
+    suspend fun extractPageText(context: Context, pageIndex: Int): String = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            val safeId = currentDocId
+            if (safeId.isBlank()) return@withLock ""
+            val safeFileName = "${safeId.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
+            val pdfDir = File(context.filesDir, "saved_pdfs")
+            val internalFile = File(pdfDir, safeFileName)
+
+            if (!internalFile.exists() || internalFile.length() == 0L) return@withLock ""
+
+            try {
+                PDFBoxResourceLoader.init(context)
+                val pdDoc = PDDocument.load(internalFile)
+                val stripper = com.tom_roush.pdfbox.text.PDFTextStripper()
+                stripper.startPage = pageIndex + 1
+                stripper.endPage = pageIndex + 1
+                val extracted = stripper.getText(pdDoc).trim()
+                pdDoc.close()
+                extracted
+            } catch (e: Exception) {
+                e.printStackTrace()
+                ""
+            }
+        }
+    }
+
     fun closeDocument() {
         try {
             closeDocumentInternal()

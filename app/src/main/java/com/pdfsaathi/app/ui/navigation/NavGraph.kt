@@ -32,8 +32,10 @@ import com.pdfsaathi.app.ui.home.HomeScreen
 import com.pdfsaathi.app.ui.reader.PdfReaderScreen
 import com.pdfsaathi.app.ui.search.SearchScreen
 import com.pdfsaathi.app.ui.settings.SettingsScreen
+import com.pdfsaathi.app.ui.splash.SplashScreen
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
+    object Splash : Screen("splash", "Splash")
     object Home : Screen("home", "Home", Icons.Default.Home)
     object Documents : Screen("documents", "Files", Icons.Default.Folder)
     object Favorites : Screen("favorites", "Favorites", Icons.Default.Star)
@@ -91,9 +93,18 @@ fun PdfNavGraph(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Splash.route,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(Screen.Splash.route) {
+                SplashScreen(
+                    onSplashFinished = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable(Screen.Home.route) {
                 HomeScreen(
                     onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) },

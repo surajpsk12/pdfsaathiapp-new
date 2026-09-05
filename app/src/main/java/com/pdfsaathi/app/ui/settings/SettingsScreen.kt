@@ -258,7 +258,7 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("PDF Saathi App", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text("PDF Saathi", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                             Text("Version 1.0.0 • Offline-first build", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Surface(

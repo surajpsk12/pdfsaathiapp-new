@@ -53,6 +53,23 @@ class PdfReaderViewModel @Inject constructor(
     val isPasswordRequired = MutableStateFlow(false)
     val passwordError = MutableStateFlow<String?>(null)
 
+    val currentExtractedText = MutableStateFlow("")
+    val isTextSelectionMode = MutableStateFlow(false)
+
+    fun toggleTextSelectionMode() {
+        isTextSelectionMode.value = !isTextSelectionMode.value
+        if (isTextSelectionMode.value) {
+            extractCurrentPageText()
+        }
+    }
+
+    fun extractCurrentPageText() {
+        viewModelScope.launch {
+            val text = pdfRendererManager.extractPageText(context, currentPage.value - 1)
+            currentExtractedText.value = text
+        }
+    }
+
     fun loadDocument(documentId: String) {
         viewModelScope.launch {
             var doc = if (documentId.startsWith("content://") || documentId.startsWith("file://") || documentId.contains("/")) {
@@ -154,6 +171,9 @@ class PdfReaderViewModel @Inject constructor(
             }
             if (validPage < totalPages.value) {
                 loadPageBitmapForContinuous(validPage + 1)
+            }
+            if (isTextSelectionMode.value) {
+                extractCurrentPageText()
             }
         }
     }

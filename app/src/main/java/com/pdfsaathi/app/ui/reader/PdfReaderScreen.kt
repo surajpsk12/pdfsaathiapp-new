@@ -38,11 +38,16 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Palette
@@ -112,6 +117,10 @@ fun PdfReaderScreen(
     val pageBitmaps by viewModel.pageBitmaps.collectAsState()
     val isPasswordRequired by viewModel.isPasswordRequired.collectAsState()
     val passwordError by viewModel.passwordError.collectAsState()
+
+    val isTextSelectionMode by viewModel.isTextSelectionMode.collectAsState()
+    val currentExtractedText by viewModel.currentExtractedText.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -511,6 +520,13 @@ fun PdfReaderScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.toggleTextSelectionMode() }) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Text Selection & Copy",
+                            tint = if (isTextSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(onClick = { viewModel.toggleViewerMode() }) {
                         Icon(
                             imageVector = Icons.Default.ViewAgenda,
@@ -753,6 +769,102 @@ fun PdfReaderScreen(
                 dismissButton = {
                     TextButton(onClick = onBackClick) {
                         Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Text Selection & Copy Modal Overlay
+        if (isTextSelectionMode) {
+            AlertDialog(
+                onDismissRequest = { viewModel.toggleTextSelectionMode() },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Text Selection (Page $page)")
+                    }
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Tap & select text, copy page text, define words, or share snippets:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 220.dp)
+                        ) {
+                            SelectionContainer(
+                                modifier = Modifier
+                                    .padding(12.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                Text(
+                                    text = if (currentExtractedText.isNotBlank()) currentExtractedText else "Extracting text from page $page...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = {
+                                if (currentExtractedText.isNotBlank()) {
+                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                    val clip = android.content.ClipData.newPlainText("PDF Page $page Text", currentExtractedText)
+                                    clipboard.setPrimaryClip(clip)
+                                    android.widget.Toast.makeText(context, "Page text copied to clipboard!", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        ) {
+                            Text("Copy All", fontWeight = FontWeight.Bold)
+                        }
+                        TextButton(
+                            onClick = {
+                                if (currentExtractedText.isNotBlank()) {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_WEB_SEARCH).apply {
+                                        putExtra(android.app.SearchManager.QUERY, currentExtractedText.take(150))
+                                    }
+                                    try { context.startActivity(intent) } catch (_: Exception) {}
+                                }
+                            }
+                        ) {
+                            Text("Search")
+                        }
+                        TextButton(
+                            onClick = {
+                                if (currentExtractedText.isNotBlank()) {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_TEXT, currentExtractedText)
+                                    }
+                                    try { context.startActivity(android.content.Intent.createChooser(intent, "Share Snippet")) } catch (_: Exception) {}
+                                }
+                            }
+                        ) {
+                            Text("Share")
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.toggleTextSelectionMode() }) {
+                        Text("Close")
                     }
                 }
             )
