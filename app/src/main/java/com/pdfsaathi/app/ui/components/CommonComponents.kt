@@ -60,7 +60,7 @@ fun cleanDocumentTitle(rawName: String): String {
 fun PdfDocumentCardRow(
     document: PdfDocument,
     onClick: () -> Unit,
-    onToggleFavorite: () -> Unit,
+    onToggleFavorite: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -144,14 +144,6 @@ fun PdfDocumentCardRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-
-            IconButton(onClick = onToggleFavorite) {
-                Icon(
-                    imageVector = if (document.isFavorite) Icons.Default.Star else Icons.Outlined.StarBorder,
-                    contentDescription = "Favorite",
-                    tint = if (document.isFavorite) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             if (onDelete != null) {

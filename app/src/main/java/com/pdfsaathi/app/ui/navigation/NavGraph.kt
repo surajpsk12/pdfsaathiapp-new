@@ -54,8 +54,6 @@ fun PdfNavGraph(
 
     val bottomNavItems = listOf(
         Screen.Home,
-        Screen.Documents,
-        Screen.Favorites,
         Screen.Settings
     )
 

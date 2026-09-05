@@ -435,13 +435,6 @@ fun PdfReaderScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.toggleFavorite() }) {
-                        Icon(
-                            imageVector = if (document?.isFavorite == true) Icons.Default.Star else Icons.Outlined.StarBorder,
-                            contentDescription = "Star",
-                            tint = if (document?.isFavorite == true) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
                     IconButton(onClick = { viewModel.toggleViewerMode() }) {
                         Icon(
                             imageVector = Icons.Default.ViewAgenda,
