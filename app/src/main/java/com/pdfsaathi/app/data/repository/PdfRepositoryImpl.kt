@@ -58,18 +58,56 @@ class PdfRepositoryImpl @Inject constructor(
 
     override suspend fun importDocumentFromUri(uri: Uri): PdfDocument? {
         val uriString = uri.toString()
+
+        if (uri.scheme == "content") {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         val existing = pdfDocumentDao.getDocumentByUri(uriString)
+        val safeId = existing?.id ?: UUID.randomUUID().toString()
+        val pdfDir = java.io.File(context.filesDir, "saved_pdfs").apply { if (!exists()) mkdirs() }
+        val safeFileName = "${safeId.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
+        val cachedFile = java.io.File(pdfDir, safeFileName)
+
+        if (!cachedFile.exists() || cachedFile.length() == 0L) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    java.io.FileOutputStream(cachedFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        val storedUri = if (cachedFile.exists() && cachedFile.length() > 0) {
+            Uri.fromFile(cachedFile).toString()
+        } else {
+            uriString
+        }
+
         if (existing != null) {
-            val updated = existing.copy(lastOpened = System.currentTimeMillis())
+            val updated = existing.copy(
+                uri = storedUri,
+                lastOpened = System.currentTimeMillis()
+            )
             pdfDocumentDao.updateDocument(updated)
             return updated.toDomain()
         }
 
         val name = FileUtil.getFileName(context, uri)
-        val size = FileUtil.getFileSize(context, uri)
+        val size = if (cachedFile.exists() && cachedFile.length() > 0) cachedFile.length() else FileUtil.getFileSize(context, uri)
         val newEntity = PdfDocumentEntity(
-            id = UUID.randomUUID().toString(),
-            uri = uriString,
+            id = safeId,
+            uri = storedUri,
             name = name,
             size = size,
             lastModified = System.currentTimeMillis(),

@@ -7,6 +7,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -30,15 +31,14 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,6 +56,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -63,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -98,7 +100,7 @@ fun PdfReaderScreen(
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
     var showJumpDialog by remember { mutableStateOf(false) }
-    var jumpTargetPage by remember { mutableStateOf(page) }
+    var jumpTargetPage by remember { mutableIntStateOf(page) }
     var hasRestoredInitialScroll by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
@@ -111,6 +113,13 @@ fun PdfReaderScreen(
 
     LaunchedEffect(documentId) {
         viewModel.loadDocument(documentId)
+    }
+
+    // Reset zoom when page or view mode changes
+    LaunchedEffect(pagerState.currentPage, viewerMode) {
+        scale = 1f
+        offsetX = 0f
+        offsetY = 0f
     }
 
     // Restore last read page position on document load
@@ -174,8 +183,12 @@ fun PdfReaderScreen(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 70.dp, bottom = 30.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(
+                    top = if (totalPages == 1) 20.dp else 70.dp,
+                    bottom = if (totalPages == 1) 20.dp else 30.dp
+                ),
+                verticalArrangement = if (totalPages == 1) Arrangement.Center else Arrangement.spacedBy(12.dp),
+                userScrollEnabled = scale <= 1.05f
             ) {
                 items(totalPages) { index ->
                     val pageNum = index + 1
@@ -186,71 +199,117 @@ fun PdfReaderScreen(
 
                     val pageImg = pageBitmaps[pageNum] ?: if (pageNum == page) bitmap else null
 
-                    Surface(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color.White,
-                        shadowElevation = 3.dp
-                    ) {
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            if (pageImg != null) {
-                                Image(
-                                    bitmap = pageImg,
-                                    contentDescription = "Page $pageNum",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentScale = ContentScale.FillWidth
+                            .padding(horizontal = 12.dp)
+                            .clipToBounds()
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = {
+                                        if (scale > 1.2f) {
+                                            scale = 1f
+                                            offsetX = 0f
+                                            offsetY = 0f
+                                        } else {
+                                            scale = 2.5f
+                                            offsetX = 0f
+                                            offsetY = 0f
+                                        }
+                                    }
                                 )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(550.dp)
-                                        .background(Color.White),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        Text(
-                                            text = "Loading Page $pageNum of $totalPages...",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = Color.DarkGray
-                                        )
+                            }
+                            .pointerInput(scale > 1.05f) {
+                                if (scale > 1.05f) {
+                                    detectTransformGestures { _, pan, zoom, _ ->
+                                        val newScale = (scale * zoom).coerceIn(1f, 4.5f)
+                                        scale = newScale
+                                        if (newScale > 1.05f) {
+                                            val maxX = (size.width * (newScale - 1f)) / 2f
+                                            val maxY = (size.height * (newScale - 1f)) / 2f
+                                            offsetX = (offsetX + pan.x * newScale).coerceIn(-maxX, maxX)
+                                            offsetY = (offsetY + pan.y * newScale).coerceIn(-maxY, maxY)
+                                        } else {
+                                            offsetX = 0f
+                                            offsetY = 0f
+                                        }
                                     }
                                 }
                             }
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clipToBounds()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offsetX,
+                                    translationY = offsetY,
+                                    clip = true
+                                ),
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.White,
+                            shadowElevation = 3.dp
+                        ) {
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                if (pageImg != null) {
+                                    Image(
+                                        bitmap = pageImg,
+                                        contentDescription = "Page $pageNum",
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentScale = ContentScale.FillWidth
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(550.dp)
+                                            .background(Color.White),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Text(
+                                                text = "Loading Page $pageNum of $totalPages...",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = Color.DarkGray
+                                            )
+                                        }
+                                    }
+                                }
 
-                            // Cyan Page Number Badge (e.g. 08, 09 matching Image 1)
-                            Surface(
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(12.dp),
-                                shape = RoundedCornerShape(4.dp),
-                                color = Color(0xFF00E5FF),
-                                shadowElevation = 4.dp
-                            ) {
-                                Text(
-                                    text = "%02d".format(pageNum),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.Black,
-                                    fontSize = 12.sp
-                                )
+                                // Cyan Page Number Badge
+                                Surface(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(12.dp),
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = Color(0xFF00E5FF),
+                                    shadowElevation = 4.dp
+                                ) {
+                                    Text(
+                                        text = "%02d".format(pageNum),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = Color.Black,
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Right-Side Dynamic Fast Scroll Knob (Moves Up & Down with PDF scroll progress & touch-down drag)
+            // Compact Right-Side Dynamic Fast Scroll Knob
             BoxWithConstraints(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
-                    .padding(vertical = 70.dp)
-                    .width(120.dp)
+                    .padding(vertical = 80.dp)
+                    .width(60.dp)
                     .pointerInput(totalPages) {
                         detectVerticalDragGestures(
                             onDragStart = { offset ->
@@ -273,39 +332,44 @@ fun PdfReaderScreen(
                         )
                     }
             ) {
-                val usableHeight = maxHeight - 60.dp
+                val usableHeight = this.maxHeight - 50.dp
                 val scrollProgress = ((listState.firstVisibleItemIndex.toFloat() + (listState.firstVisibleItemScrollOffset.toFloat() / 800f)) / (totalPages - 1).coerceAtLeast(1)).coerceIn(0f, 1f)
                 val knobYOffset = usableHeight * scrollProgress
 
-                Surface(
-                    modifier = Modifier
-                        .offset(y = knobYOffset)
-                        .align(Alignment.TopEnd)
-                        .padding(end = 6.dp)
-                        .clickable {
-                            jumpTargetPage = page
-                            showJumpDialog = true
-                        },
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    shadowElevation = 8.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Surface(
+                        modifier = Modifier
+                            .offset(y = knobYOffset)
+                            .align(Alignment.TopEnd)
+                            .padding(end = 4.dp)
+                            .clickable {
+                                jumpTargetPage = page
+                                showJumpDialog = true
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                        shadowElevation = 4.dp
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Navigation,
-                            contentDescription = "Fast Scroll",
-                            tint = Color.White,
-                            modifier = Modifier.height(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "$page / $totalPages",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Navigation,
+                                contentDescription = "Fast Scroll",
+                                tint = Color.White,
+                                modifier = Modifier.height(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "$page/$totalPages",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp
+                                ),
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -314,7 +378,7 @@ fun PdfReaderScreen(
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
-                userScrollEnabled = scale == 1f
+                userScrollEnabled = scale <= 1.05f
             ) { pageIdx ->
                 val pageNum = pageIdx + 1
 
@@ -328,15 +392,36 @@ fun PdfReaderScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 10.dp, vertical = 10.dp)
+                        .clipToBounds()
                         .pointerInput(Unit) {
-                            detectTransformGestures { _, pan, zoom, _ ->
-                                scale = (scale * zoom).coerceIn(1f, 5f)
-                                if (scale > 1f) {
-                                    offsetX += pan.x
-                                    offsetY += pan.y
-                                } else {
-                                    offsetX = 0f
-                                    offsetY = 0f
+                            detectTapGestures(
+                                onDoubleTap = {
+                                    if (scale > 1.2f) {
+                                        scale = 1f
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                    } else {
+                                        scale = 2.5f
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                    }
+                                }
+                            )
+                        }
+                        .pointerInput(scale > 1.05f) {
+                            if (scale > 1.05f) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    val newScale = (scale * zoom).coerceIn(1f, 4.5f)
+                                    scale = newScale
+                                    if (newScale > 1.05f) {
+                                        val maxX = (size.width * (newScale - 1f)) / 2f
+                                        val maxY = (size.height * (newScale - 1f)) / 2f
+                                        offsetX = (offsetX + pan.x * newScale).coerceIn(-maxX, maxX)
+                                        offsetY = (offsetY + pan.y * newScale).coerceIn(-maxY, maxY)
+                                    } else {
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                    }
                                 }
                             }
                         },
@@ -345,11 +430,13 @@ fun PdfReaderScreen(
                     Surface(
                         modifier = Modifier
                             .fillMaxSize()
+                            .clipToBounds()
                             .graphicsLayer(
                                 scaleX = scale,
                                 scaleY = scale,
                                 translationX = offsetX,
-                                translationY = offsetY
+                                translationY = offsetY,
+                                clip = true
                             ),
                         shape = RoundedCornerShape(8.dp),
                         color = Color.White,
@@ -403,6 +490,45 @@ fun PdfReaderScreen(
             }
         }
 
+        // Floating Reset Zoom Button Pill (Visible when scale > 1.05f)
+        AnimatedVisibility(
+            visible = scale > 1.05f,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 90.dp)
+        ) {
+            Surface(
+                modifier = Modifier.clickable {
+                    scale = 1f
+                    offsetX = 0f
+                    offsetY = 0f
+                },
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.94f),
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reset Zoom",
+                        tint = Color.White,
+                        modifier = Modifier.height(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "${(scale * 100).toInt()}% • Tap to Reset",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
         // Top Bar Overlay
         AnimatedVisibility(
             visible = showControls,
@@ -431,7 +557,7 @@ fun PdfReaderScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {

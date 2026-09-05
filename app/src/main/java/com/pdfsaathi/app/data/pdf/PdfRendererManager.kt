@@ -41,8 +41,27 @@ class PdfRendererManager @Inject constructor() {
             closeDocumentInternal()
 
             val uriString = uri.toString()
+            val safeId = if (documentId.isNotBlank()) documentId else uri.hashCode().toString()
+            val safeFileName = "${safeId.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
+            val pdfDir = File(context.filesDir, "saved_pdfs").apply { if (!exists()) mkdirs() }
+            val internalFile = File(pdfDir, safeFileName)
 
-            // Strategy 1: Direct File check if scheme is "file" or path is raw file path
+            // Strategy 1: Check internal cached file first
+            if (internalFile.exists() && internalFile.length() > 0) {
+                try {
+                    val pfd = ParcelFileDescriptor.open(internalFile, ParcelFileDescriptor.MODE_READ_ONLY)
+                    if (pfd != null) {
+                        val renderer = PdfRenderer(pfd)
+                        fileDescriptor = pfd
+                        pdfRenderer = renderer
+                        return@withLock renderer.pageCount
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            // Strategy 2: Direct File check if scheme is "file" or path is raw file path
             try {
                 val rawPath = when {
                     uri.scheme == "file" -> uri.path
@@ -67,11 +86,24 @@ class PdfRendererManager @Inject constructor() {
                 e.printStackTrace()
             }
 
-            // Strategy 2: Direct ContentResolver openFileDescriptor
+            // Strategy 3: Direct ContentResolver openFileDescriptor
             try {
                 if (uri != Uri.EMPTY) {
                     val pfd = context.contentResolver.openFileDescriptor(uri, "r")
                     if (pfd != null) {
+                        // Also try to cache internally asynchronously/synchronously if possible
+                        try {
+                            if (!internalFile.exists() || internalFile.length() == 0L) {
+                                context.contentResolver.openInputStream(uri)?.use { input ->
+                                    FileOutputStream(internalFile).use { output ->
+                                        input.copyTo(output)
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+
                         val renderer = PdfRenderer(pfd)
                         fileDescriptor = pfd
                         pdfRenderer = renderer
@@ -82,7 +114,7 @@ class PdfRendererManager @Inject constructor() {
                 e.printStackTrace()
             }
 
-            // Strategy 2b: Resolve MediaStore DATA column path if content URI
+            // Strategy 4: Resolve MediaStore DATA column path if content URI
             try {
                 if (uri.scheme == "content") {
                     val proj = arrayOf(android.provider.MediaStore.Files.FileColumns.DATA)
@@ -109,27 +141,7 @@ class PdfRendererManager @Inject constructor() {
                 e.printStackTrace()
             }
 
-            // Strategy 3: Check cached internal file
-            val safeId = if (documentId.isNotBlank()) documentId else uri.hashCode().toString()
-            val safeFileName = "${safeId.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
-            val pdfDir = File(context.filesDir, "saved_pdfs").apply { if (!exists()) mkdirs() }
-            val internalFile = File(pdfDir, safeFileName)
-
-            if (internalFile.exists() && internalFile.length() > 0) {
-                try {
-                    val pfd = ParcelFileDescriptor.open(internalFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                    if (pfd != null) {
-                        val renderer = PdfRenderer(pfd)
-                        fileDescriptor = pfd
-                        pdfRenderer = renderer
-                        return@withLock renderer.pageCount
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-
-            // Strategy 4: Copy stream from ContentResolver to internal file
+            // Strategy 5: Copy stream from ContentResolver to internal file
             try {
                 if (uri != Uri.EMPTY) {
                     context.contentResolver.openInputStream(uri)?.use { inputStream ->

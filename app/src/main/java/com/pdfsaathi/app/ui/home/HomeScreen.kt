@@ -72,10 +72,19 @@ fun HomeScreen(
     val allDocs by viewModel.allDocuments.collectAsState()
     var documentToDelete by remember { mutableStateOf<PdfDocument?>(null) }
 
+    val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
             viewModel.importPdfFromUri(it) { doc ->
                 onOpenReader(doc)
             }
@@ -113,7 +122,7 @@ fun HomeScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { launcher.launch("application/pdf") },
+                onClick = { launcher.launch(arrayOf("application/pdf")) },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Import PDF")
@@ -132,7 +141,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .clickable { launcher.launch("application/pdf") },
+                        .clickable { launcher.launch(arrayOf("application/pdf")) },
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
