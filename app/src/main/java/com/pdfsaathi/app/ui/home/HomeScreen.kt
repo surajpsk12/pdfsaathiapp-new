@@ -104,7 +104,7 @@ fun HomeScreen(
                             )
                         )
                         Text(
-                            text = "${allDocs.size} PDFs found on device",
+                            text = "Your Recent Documents",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -119,21 +119,13 @@ fun HomeScreen(
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { launcher.launch(arrayOf("application/pdf")) },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Import PDF")
-            }
         }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 90.dp)
+            contentPadding = PaddingValues(bottom = 30.dp)
         ) {
             // Hero Open PDF File Action Card
             item {
@@ -190,72 +182,29 @@ fun HomeScreen(
                 }
             }
 
-            // Recents Section (If any)
-            if (recents.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Recent Files",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(recents) { doc ->
-                            val context = LocalContext.current
-                            RecentCardItem(
-                                document = doc,
-                                onClick = { onOpenReader(doc) },
-                                onShare = {
-                                    try {
-                                        val intent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "application/pdf"
-                                            putExtra(Intent.EXTRA_STREAM, Uri.parse(doc.uri))
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        context.startActivity(Intent.createChooser(intent, "Share ${doc.name}"))
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                },
-                                
-                                onDownload = {
-                                    Toast.makeText(context, "${doc.name} saved offline", Toast.LENGTH_SHORT).show()
-                                },
-                                onDelete = {
-                                    documentToDelete = doc
-                                }
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(14.dp))
-                }
-            }
-
-            // All PDF Files Section
+            // Recents Section (Vertical List)
             item {
                 Text(
-                    text = "PDF Files on Device",
+                    text = "Recent Files",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
 
-            if (allDocs.isEmpty()) {
+            if (recents.isEmpty()) {
                 item {
                     EmptyStateWidget(
-                        title = "No PDFs Found",
+                        title = "No Recent Files",
                         subtitle = "Tap 'Open PDF File' above to browse and open any document."
                     )
                 }
             } else {
-                items(allDocs) { doc ->
+                items(recents) { doc ->
                     PdfDocumentCardRow(
                         document = doc,
                         onClick = { onOpenReader(doc) },
                         onDelete = { documentToDelete = doc },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                     )
                 }
             }

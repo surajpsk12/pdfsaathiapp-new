@@ -23,9 +23,9 @@ class SettingsRepository @Inject constructor(
     )
     val appTheme: StateFlow<ReadingTheme> = _appTheme
 
-    private val _defaultViewerMode = MutableStateFlow(
-        prefs.getString("default_viewer_mode", "continuous") ?: "continuous"
-    )
+    private val _defaultViewerMode = MutableStateFlow("single").also {
+        prefs.edit().putString("default_viewer_mode", "single").apply()
+    }
     val defaultViewerMode: StateFlow<String> = _defaultViewerMode
 
     fun setAppTheme(theme: ReadingTheme) {

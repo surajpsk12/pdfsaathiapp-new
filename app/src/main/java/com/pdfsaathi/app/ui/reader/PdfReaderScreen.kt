@@ -7,9 +7,14 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,7 +28,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -35,17 +43,22 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -70,6 +83,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -95,6 +110,8 @@ fun PdfReaderScreen(
     val showControls by viewModel.isControlsVisible.collectAsState()
     val bitmap by viewModel.currentPageBitmap.collectAsState()
     val pageBitmaps by viewModel.pageBitmaps.collectAsState()
+    val isPasswordRequired by viewModel.isPasswordRequired.collectAsState()
+    val passwordError by viewModel.passwordError.collectAsState()
 
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -102,6 +119,8 @@ fun PdfReaderScreen(
     var showJumpDialog by remember { mutableStateOf(false) }
     var jumpTargetPage by remember { mutableIntStateOf(page) }
     var hasRestoredInitialScroll by remember { mutableStateOf(false) }
+    var inputPassword by remember { mutableStateOf("") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -184,10 +203,11 @@ fun PdfReaderScreen(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    top = if (totalPages == 1) 20.dp else 70.dp,
-                    bottom = if (totalPages == 1) 20.dp else 30.dp
+                    top = 70.dp,
+                    bottom = 70.dp
                 ),
-                verticalArrangement = if (totalPages == 1) Arrangement.Center else Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
                 userScrollEnabled = scale <= 1.05f
             ) {
                 items(totalPages) { index ->
@@ -203,51 +223,9 @@ fun PdfReaderScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp)
-                            .clipToBounds()
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onDoubleTap = {
-                                        if (scale > 1.2f) {
-                                            scale = 1f
-                                            offsetX = 0f
-                                            offsetY = 0f
-                                        } else {
-                                            scale = 2.5f
-                                            offsetX = 0f
-                                            offsetY = 0f
-                                        }
-                                    }
-                                )
-                            }
-                            .pointerInput(scale > 1.05f) {
-                                if (scale > 1.05f) {
-                                    detectTransformGestures { _, pan, zoom, _ ->
-                                        val newScale = (scale * zoom).coerceIn(1f, 4.5f)
-                                        scale = newScale
-                                        if (newScale > 1.05f) {
-                                            val maxX = (size.width * (newScale - 1f)) / 2f
-                                            val maxY = (size.height * (newScale - 1f)) / 2f
-                                            offsetX = (offsetX + pan.x * newScale).coerceIn(-maxX, maxX)
-                                            offsetY = (offsetY + pan.y * newScale).coerceIn(-maxY, maxY)
-                                        } else {
-                                            offsetX = 0f
-                                            offsetY = 0f
-                                        }
-                                    }
-                                }
-                            }
                     ) {
                         Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clipToBounds()
-                                .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    translationX = offsetX,
-                                    translationY = offsetY,
-                                    clip = true
-                                ),
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
                             color = Color.White,
                             shadowElevation = 3.dp
@@ -278,24 +256,6 @@ fun PdfReaderScreen(
                                             )
                                         }
                                     }
-                                }
-
-                                // Cyan Page Number Badge
-                                Surface(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .padding(12.dp),
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = Color(0xFF00E5FF),
-                                    shadowElevation = 4.dp
-                                ) {
-                                    Text(
-                                        text = "%02d".format(pageNum),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = Color.Black,
-                                        fontSize = 12.sp
-                                    )
                                 }
                             }
                         }
@@ -408,21 +368,29 @@ fun PdfReaderScreen(
                                 }
                             )
                         }
-                        .pointerInput(scale > 1.05f) {
-                            if (scale > 1.05f) {
-                                detectTransformGestures { _, pan, zoom, _ ->
-                                    val newScale = (scale * zoom).coerceIn(1f, 4.5f)
-                                    scale = newScale
-                                    if (newScale > 1.05f) {
-                                        val maxX = (size.width * (newScale - 1f)) / 2f
-                                        val maxY = (size.height * (newScale - 1f)) / 2f
-                                        offsetX = (offsetX + pan.x * newScale).coerceIn(-maxX, maxX)
-                                        offsetY = (offsetY + pan.y * newScale).coerceIn(-maxY, maxY)
-                                    } else {
-                                        offsetX = 0f
-                                        offsetY = 0f
+                        .pointerInput(scale) {
+                            awaitEachGesture {
+                                do {
+                                    val event = awaitPointerEvent()
+                                    if (event.changes.size > 1 || scale > 1.05f) {
+                                        val zoomChange = event.calculateZoom()
+                                        val panChange = event.calculatePan()
+                                        if (zoomChange != 1f || panChange != Offset.Zero) {
+                                            val newScale = (scale * zoomChange).coerceIn(1f, 5f)
+                                            scale = newScale
+                                            if (newScale > 1.05f) {
+                                                val maxX = (size.width * (newScale - 1f)) / 2f
+                                                val maxY = (size.height * (newScale - 1f)) / 2f
+                                                offsetX = (offsetX + panChange.x * newScale).coerceIn(-maxX, maxX)
+                                                offsetY = (offsetY + panChange.y * newScale).coerceIn(-maxY, maxY)
+                                            } else {
+                                                offsetX = 0f
+                                                offsetY = 0f
+                                            }
+                                            event.changes.forEach { it.consume() }
+                                        }
                                     }
-                                }
+                                } while (event.changes.any { it.pressed })
                             }
                         },
                     contentAlignment = Alignment.Center
@@ -465,24 +433,6 @@ fun PdfReaderScreen(
                                         )
                                     }
                                 }
-                            }
-
-                            // Cyan Page Number Badge
-                            Surface(
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(12.dp),
-                                shape = RoundedCornerShape(4.dp),
-                                color = Color(0xFF00E5FF),
-                                shadowElevation = 4.dp
-                            ) {
-                                Text(
-                                    text = "%02d".format(pageNum),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.Black,
-                                    fontSize = 12.sp
-                                )
                             }
                         }
                     }
@@ -594,14 +544,23 @@ fun PdfReaderScreen(
                 visible = showControls,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 20.dp, vertical = 20.dp)
             ) {
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                    shadowElevation = 12.dp
+                    modifier = Modifier.wrapContentWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
+                    shadowElevation = 8.dp
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = 300.dp)
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -609,42 +568,60 @@ fun PdfReaderScreen(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             ) {
                                 Text(
                                     text = "$page / $totalPages",
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = {
-                                    if (page > 1) {
-                                        val prev = page - 1
-                                        viewModel.renderPage(prev)
-                                        coroutineScope.launch {
-                                            pagerState.animateScrollToPage(prev - 1)
+                                IconButton(
+                                    onClick = {
+                                        if (page > 1) {
+                                            val prev = page - 1
+                                            viewModel.renderPage(prev)
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(prev - 1)
+                                            }
                                         }
-                                    }
-                                }) {
-                                    Icon(Icons.Default.ChevronLeft, contentDescription = "Prev Page", modifier = Modifier.height(28.dp))
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ChevronLeft,
+                                        contentDescription = "Prev Page",
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                 }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                IconButton(onClick = {
-                                    if (page < totalPages) {
-                                        val next = page + 1
-                                        viewModel.renderPage(next)
-                                        coroutineScope.launch {
-                                            pagerState.animateScrollToPage(next - 1)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                IconButton(
+                                    onClick = {
+                                        if (page < totalPages) {
+                                            val next = page + 1
+                                            viewModel.renderPage(next)
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(next - 1)
+                                            }
                                         }
-                                    }
-                                }) {
-                                    Icon(Icons.Default.ChevronRight, contentDescription = "Next Page", modifier = Modifier.height(28.dp))
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ChevronRight,
+                                        contentDescription = "Next Page",
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                 }
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         Slider(
                             value = page.toFloat(),
@@ -656,7 +633,14 @@ fun PdfReaderScreen(
                                 }
                             },
                             valueRange = 1f..totalPages.toFloat().coerceAtLeast(1f),
-                            modifier = Modifier.fillMaxWidth()
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(24.dp)
                         )
                     }
                 }
@@ -702,6 +686,72 @@ fun PdfReaderScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showJumpDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Password Protected PDF Unlock Dialog
+        if (isPasswordRequired) {
+            AlertDialog(
+                onDismissRequest = { /* Require user action */ },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Lock",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.height(32.dp)
+                    )
+                },
+                title = { Text("Password Protected PDF") },
+                text = {
+                    Column {
+                        Text(
+                            text = "This document is encrypted. Please enter the password to open.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = inputPassword,
+                            onValueChange = { inputPassword = it },
+                            label = { Text("Password") },
+                            singleLine = true,
+                            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                                    Icon(
+                                        imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = "Toggle Password Visibility"
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        passwordError?.let { err ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = err,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFEF4444)
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (inputPassword.isNotBlank()) {
+                                viewModel.unlockDocumentWithPassword(inputPassword)
+                            }
+                        }
+                    ) {
+                        Text("Unlock", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = onBackClick) {
                         Text("Cancel")
                     }
                 }

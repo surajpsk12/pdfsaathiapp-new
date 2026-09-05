@@ -38,7 +38,7 @@ class PdfReaderViewModel @Inject constructor(
     val totalPages = MutableStateFlow(1)
     val initialRestoredPage = MutableStateFlow<Int?>(null)
     val readingTheme = MutableStateFlow(settingsRepository.appTheme.value)
-    val viewerMode = MutableStateFlow(settingsRepository.defaultViewerMode.value)
+    val viewerMode = MutableStateFlow("single")
     val isControlsVisible = MutableStateFlow(true)
     val currentPageBitmap = MutableStateFlow<ImageBitmap?>(null)
 
@@ -50,7 +50,8 @@ class PdfReaderViewModel @Inject constructor(
     val pdfSearchMatches = MutableStateFlow<List<SearchMatch>>(emptyList())
     val currentMatchIndex = MutableStateFlow(0)
 
-    val bookmarks: StateFlow<List<Bookmark>> = MutableStateFlow(emptyList())
+    val isPasswordRequired = MutableStateFlow(false)
+    val passwordError = MutableStateFlow<String?>(null)
 
     fun loadDocument(documentId: String) {
         viewModelScope.launch {
@@ -86,17 +87,46 @@ class PdfReaderViewModel @Inject constructor(
                 currentDocument.value = pdfDoc
                 val targetUri = try { Uri.parse(pdfDoc.uri) } catch (e: Exception) { Uri.EMPTY }
                 val realCount = pdfRendererManager.openDocument(context, targetUri, pdfDoc.id)
-                val validTotalPages = if (realCount > 0) realCount else 1
-                totalPages.value = validTotalPages
 
-                val safeLastPage = pdfDoc.lastPage.coerceIn(1, validTotalPages)
+                if (realCount == -1) {
+                    isPasswordRequired.value = true
+                    passwordError.value = null
+                } else {
+                    isPasswordRequired.value = false
+                    passwordError.value = null
+                    val validTotalPages = if (realCount > 0) realCount else 1
+                    totalPages.value = validTotalPages
+
+                    val safeLastPage = pdfDoc.lastPage.coerceIn(1, validTotalPages)
+                    currentPage.value = safeLastPage
+
+                    // Update accurate total pages in database
+                    pdfRepository.updateTotalPages(pdfDoc.id, validTotalPages)
+                    initialRestoredPage.value = safeLastPage
+
+                    renderPage(safeLastPage)
+                }
+            }
+        }
+    }
+
+    fun unlockDocumentWithPassword(password: String) {
+        viewModelScope.launch {
+            val doc = currentDocument.value ?: return@launch
+            val targetUri = try { Uri.parse(doc.uri) } catch (e: Exception) { Uri.EMPTY }
+            val realCount = pdfRendererManager.openDocument(context, targetUri, doc.id, password)
+
+            if (realCount > 0) {
+                isPasswordRequired.value = false
+                passwordError.value = null
+                totalPages.value = realCount
+                val safeLastPage = doc.lastPage.coerceIn(1, realCount)
                 currentPage.value = safeLastPage
-
-                // Update accurate total pages in database
-                pdfRepository.updateTotalPages(pdfDoc.id, validTotalPages)
+                pdfRepository.updateTotalPages(doc.id, realCount)
                 initialRestoredPage.value = safeLastPage
-
                 renderPage(safeLastPage)
+            } else {
+                passwordError.value = "Incorrect password. Please try again."
             }
         }
     }

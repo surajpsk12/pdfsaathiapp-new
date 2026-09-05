@@ -16,6 +16,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,7 +35,7 @@ class PdfRendererManager @Inject constructor() {
     private val cacheSizeKb = (maxMemoryKb / 8).coerceAtLeast(1024)
     private val bitmapMemoryCache = android.util.LruCache<String, ImageBitmap>(cacheSizeKb)
 
-    suspend fun openDocument(context: Context, uri: Uri, documentId: String = ""): Int = withContext(Dispatchers.IO) {
+    suspend fun openDocument(context: Context, uri: Uri, documentId: String = "", password: String? = null): Int = withContext(Dispatchers.IO) {
         mutex.withLock {
             if (currentDocId != documentId && documentId.isNotBlank()) {
                 bitmapMemoryCache.evictAll()
@@ -46,16 +49,80 @@ class PdfRendererManager @Inject constructor() {
             val pdfDir = File(context.filesDir, "saved_pdfs").apply { if (!exists()) mkdirs() }
             val internalFile = File(pdfDir, safeFileName)
 
+            var passwordRequired = false
+
+            // Ensure internal cached copy exists if stream is readable
+            if (!internalFile.exists() || internalFile.length() == 0L) {
+                if (uri != Uri.EMPTY) {
+                    try {
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            FileOutputStream(internalFile).use { outputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+
+            // Attempt PDFBox Decryption if password is provided
+            if (!password.isNullOrEmpty() && internalFile.exists() && internalFile.length() > 0L) {
+                try {
+                    PDFBoxResourceLoader.init(context)
+                    val pdDoc = PDDocument.load(internalFile, password)
+                    if (pdDoc.isEncrypted) {
+                        pdDoc.isAllSecurityToBeRemoved = true
+                    }
+                    val tempDecryptedFile = File(pdfDir, "dec_${safeFileName}")
+                    pdDoc.save(tempDecryptedFile)
+                    pdDoc.close()
+
+                    if (tempDecryptedFile.exists() && tempDecryptedFile.length() > 0L) {
+                        tempDecryptedFile.copyTo(internalFile, overwrite = true)
+                        tempDecryptedFile.delete()
+                    }
+                } catch (e: InvalidPasswordException) {
+                    passwordRequired = true
+                    return@withLock -1
+                } catch (e: Exception) {
+                    val msg = e.message ?: ""
+                    if (msg.contains("password", ignoreCase = true) || msg.contains("encrypted", ignoreCase = true)) {
+                        passwordRequired = true
+                        return@withLock -1
+                    }
+                    e.printStackTrace()
+                }
+            }
+
+            fun tryOpenPfd(pfd: ParcelFileDescriptor?): Int? {
+                if (pfd == null) return null
+                try {
+                    val renderer = PdfRenderer(pfd)
+                    fileDescriptor = pfd
+                    pdfRenderer = renderer
+                    return renderer.pageCount
+                } catch (e: SecurityException) {
+                    passwordRequired = true
+                    e.printStackTrace()
+                    try { pfd.close() } catch (_: Exception) {}
+                } catch (e: Exception) {
+                    val msg = e.message ?: ""
+                    if (msg.contains("Password", ignoreCase = true) || msg.contains("encrypted", ignoreCase = true)) {
+                        passwordRequired = true
+                    }
+                    e.printStackTrace()
+                    try { pfd.close() } catch (_: Exception) {}
+                }
+                return null
+            }
+
             // Strategy 1: Check internal cached file first
             if (internalFile.exists() && internalFile.length() > 0) {
                 try {
                     val pfd = ParcelFileDescriptor.open(internalFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                    if (pfd != null) {
-                        val renderer = PdfRenderer(pfd)
-                        fileDescriptor = pfd
-                        pdfRenderer = renderer
-                        return@withLock renderer.pageCount
-                    }
+                    val count = tryOpenPfd(pfd)
+                    if (count != null) return@withLock count
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -74,12 +141,8 @@ class PdfRendererManager @Inject constructor() {
                     val file = File(rawPath)
                     if (file.exists() && file.length() > 0) {
                         val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-                        if (pfd != null) {
-                            val renderer = PdfRenderer(pfd)
-                            fileDescriptor = pfd
-                            pdfRenderer = renderer
-                            return@withLock renderer.pageCount
-                        }
+                        val count = tryOpenPfd(pfd)
+                        if (count != null) return@withLock count
                     }
                 }
             } catch (e: Exception) {
@@ -91,92 +154,35 @@ class PdfRendererManager @Inject constructor() {
                 if (uri != Uri.EMPTY) {
                     val pfd = context.contentResolver.openFileDescriptor(uri, "r")
                     if (pfd != null) {
-                        // Also try to cache internally asynchronously/synchronously if possible
-                        try {
-                            if (!internalFile.exists() || internalFile.length() == 0L) {
-                                context.contentResolver.openInputStream(uri)?.use { input ->
-                                    FileOutputStream(internalFile).use { output ->
-                                        input.copyTo(output)
-                                    }
-                                }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-
-                        val renderer = PdfRenderer(pfd)
-                        fileDescriptor = pfd
-                        pdfRenderer = renderer
-                        return@withLock renderer.pageCount
+                        val count = tryOpenPfd(pfd)
+                        if (count != null) return@withLock count
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
-            // Strategy 4: Resolve MediaStore DATA column path if content URI
-            try {
-                if (uri.scheme == "content") {
-                    val proj = arrayOf(android.provider.MediaStore.Files.FileColumns.DATA)
-                    context.contentResolver.query(uri, proj, null, null, null)?.use { c ->
-                        val dataCol = c.getColumnIndex(android.provider.MediaStore.Files.FileColumns.DATA)
-                        if (dataCol != -1 && c.moveToFirst()) {
-                            val path = c.getString(dataCol)
-                            if (!path.isNullOrBlank()) {
-                                val file = File(path)
-                                if (file.exists() && file.length() > 0) {
-                                    val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-                                    if (pfd != null) {
-                                        val renderer = PdfRenderer(pfd)
-                                        fileDescriptor = pfd
-                                        pdfRenderer = renderer
-                                        return@withLock renderer.pageCount
-                                    }
-                                }
-                            }
-                        }
+            // Check encryption status via PDFBox if not opened yet
+            if (internalFile.exists() && internalFile.length() > 0L) {
+                try {
+                    PDFBoxResourceLoader.init(context)
+                    val pdDoc = PDDocument.load(internalFile)
+                    if (pdDoc.isEncrypted) {
+                        passwordRequired = true
+                    }
+                    pdDoc.close()
+                } catch (e: InvalidPasswordException) {
+                    passwordRequired = true
+                } catch (e: Exception) {
+                    val msg = e.message ?: ""
+                    if (msg.contains("password", ignoreCase = true) || msg.contains("encrypted", ignoreCase = true)) {
+                        passwordRequired = true
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
 
-            // Strategy 5: Copy stream from ContentResolver to internal file
-            try {
-                if (uri != Uri.EMPTY) {
-                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                        FileOutputStream(internalFile).use { outputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
-                    }
-                    if (internalFile.exists() && internalFile.length() > 0) {
-                        val pfd = ParcelFileDescriptor.open(internalFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                        if (pfd != null) {
-                            val renderer = PdfRenderer(pfd)
-                            fileDescriptor = pfd
-                            pdfRenderer = renderer
-                            return@withLock renderer.pageCount
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            // Strategy 5: Try resolving URI path directly if it exists on disk
-            try {
-                val fileFromUri = File(uri.path ?: "")
-                if (fileFromUri.exists() && fileFromUri.length() > 0) {
-                    val pfd = ParcelFileDescriptor.open(fileFromUri, ParcelFileDescriptor.MODE_READ_ONLY)
-                    if (pfd != null) {
-                        val renderer = PdfRenderer(pfd)
-                        fileDescriptor = pfd
-                        pdfRenderer = renderer
-                        return@withLock renderer.pageCount
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            if (passwordRequired) {
+                return@withLock -1
             }
 
             return@withLock 1

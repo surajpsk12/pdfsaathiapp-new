@@ -80,6 +80,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    // PDFBox for Android (Password Protected PDF Decryption)
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
