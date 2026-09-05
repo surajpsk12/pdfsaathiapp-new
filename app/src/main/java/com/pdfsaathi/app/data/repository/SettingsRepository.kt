@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
+
 @Singleton
 class SettingsRepository @Inject constructor(
     @ApplicationContext context: Context
