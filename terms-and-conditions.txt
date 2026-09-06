@@ -1,0 +1,109 @@
+================================================================================
+TERMS AND CONDITIONS FOR PDF SAATHI
+================================================================================
+Last Updated: September 6, 2026
+App Name: PDF Saathi
+Package Name: com.pdfsaathi.app
+Developer: Suraj Kumar
+Contact Email: workwithsurajvansh12@gmail.com
+
+--------------------------------------------------------------------------------
+1. ACCEPTANCE OF TERMS
+--------------------------------------------------------------------------------
+By downloading, installing, or using the PDF Saathi application ("App"), you 
+agree to be bound by these Terms and Conditions ("Terms"). If you do not agree 
+to these Terms, please do not install or use the App.
+
+These Terms apply to all users, viewers, and others who access or use PDF Saathi.
+
+
+--------------------------------------------------------------------------------
+2. LICENSE & USE OF THE APP
+--------------------------------------------------------------------------------
+PDF Saathi grants you a personal, non-exclusive, non-transferable, revocable license 
+to download, install, and use the App solely for your personal, non-commercial 
+or educational document viewing and management purposes on compatible Android devices.
+
+You agree NOT to:
+• Decompile, reverse engineer, disassemble, or attempt to derive the source code 
+  of the App.
+• Modify, adapt, translate, or create derivative works based upon the App.
+• Use the App for any illegal, unauthorized, or unlawful activity.
+• Rent, lease, lend, sell, redistribute, or sublicense the App.
+
+
+--------------------------------------------------------------------------------
+3. USER CONTENT & DOCUMENT PRIVACY
+--------------------------------------------------------------------------------
+PDF Saathi operates 100% offline. All PDF files, documents, bookmarks, and local 
+data accessed or generated within the App remain stored exclusively on your device.
+
+• You retain full ownership and rights to all files and content viewed using the App.
+• PDF Saathi does not access, collect, or store your documents on any external 
+  cloud or server.
+• You are solely responsible for maintaining backups of your files and ensuring 
+  the security of password-protected documents stored on your device.
+
+
+--------------------------------------------------------------------------------
+4. PERMISSIONS & ACCESSIBILITY
+--------------------------------------------------------------------------------
+The App requires device storage permissions (such as reading documents and managing 
+external storage) to index, display, and organize your local PDF files. By granting 
+these permissions, you authorize the App to perform local file operations on your device.
+
+
+--------------------------------------------------------------------------------
+5. INTELLECTUAL PROPERTY RIGHTS
+--------------------------------------------------------------------------------
+The App, including its original design, graphics, logo, code, and user interface, 
+is owned by Suraj Kumar and is protected by copyright and intellectual property laws. 
+All rights not expressly granted to you are reserved by the developer.
+
+
+--------------------------------------------------------------------------------
+6. DISCLAIMER OF WARRANTIES
+--------------------------------------------------------------------------------
+PDF Saathi is provided on an "AS IS" and "AS AVAILABLE" basis without warranties 
+of any kind, either express or implied, including but not limited to implied 
+warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+We do not warrant that:
+• The App will operate uninterrupted, error-free, or compatible with all devices.
+• File rendering or password decryption will be 100% accurate or failure-proof for corrupted files.
+• Any errors or defects in the App will be corrected immediately.
+
+
+--------------------------------------------------------------------------------
+7. LIMITATION OF LIABILITY
+--------------------------------------------------------------------------------
+To the maximum extent permitted by applicable law, Suraj Kumar shall not be liable 
+for any direct, indirect, incidental, special, consequential, or punitive damages, 
+including but not limited to loss of data, file corruption, device malfunction, or 
+business interruption arising out of your use or inability to use the App.
+
+
+--------------------------------------------------------------------------------
+8. MODIFICATIONS TO TERMS
+--------------------------------------------------------------------------------
+We reserve the right to revise or modify these Terms at any time. Any changes 
+will be posted on this page with an updated "Last Updated" date. Continued use of 
+the App after any such changes constitutes your acceptance of the new Terms.
+
+
+--------------------------------------------------------------------------------
+9. GOVERNING LAW
+--------------------------------------------------------------------------------
+These Terms shall be governed by and construed in accordance with the laws of 
+India, without regard to its conflict of law principles.
+
+
+--------------------------------------------------------------------------------
+10. CONTACT INFORMATION
+--------------------------------------------------------------------------------
+If you have any questions or concerns regarding these Terms and Conditions, 
+please contact us at:
+
+• Developer Name: Suraj Kumar
+• Contact Email: workwithsurajvansh12@gmail.com
+================================================================================

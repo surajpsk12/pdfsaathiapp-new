@@ -1,0 +1,48 @@
+================================================================================
+RELEASE NOTES FOR PDF SAATHI (v1.0.0 - Initial Release)
+================================================================================
+App Name: PDF Saathi
+Version: 1.0.0
+Version Code: 1
+Package Name: com.pdfsaathi.app
+
+--------------------------------------------------------------------------------
+OPTION 1: PLAY CONSOLE RELEASE NOTES (Copy-paste into Play Console "What's New")
+--------------------------------------------------------------------------------
+🎉 Welcome to the initial release of PDF Saathi – Your ultimate offline PDF companion!
+
+Key Features in v1.0.0:
+• 📄 100% Offline PDF Reader – Read & manage documents without internet.
+• ⚡ Fast Device Scan – Automatically finds all PDF files on your device.
+• 🔒 Password-Protected PDF Support – Unlock and view encrypted PDFs easily.
+• 📑 Bookmarks & History – Save favorite pages and quick-access recent files.
+• 🎨 Modern Material UI – Smooth reading with Light & Dark mode support.
+• 🚫 Zero Ads & Zero Data Collection – Complete privacy for your documents.
+
+We hope you enjoy using PDF Saathi!
+
+
+--------------------------------------------------------------------------------
+OPTION 2: SHORT RELEASE NOTES (Best for quick Play Store updates)
+--------------------------------------------------------------------------------
+Initial Release of PDF Saathi!
+- Fast & lightweight offline PDF reader & document manager
+- Open password-protected PDFs seamlessly
+- Search, filter, and organize device PDFs
+- Bookmark important pages & view recent documents
+- Dark Mode & Material 3 UI
+- 100% Private, zero ads, zero data tracking
+
+
+--------------------------------------------------------------------------------
+OPTION 3: HINDI / HINGLISH RELEASE NOTES (Great for Indian Audience)
+--------------------------------------------------------------------------------
+🎉 PDF Saathi ka pahla version (v1.0.0) ab live hai!
+
+Highlights:
+• 📄 100% Offline PDF Reader – Bina internet ke PDF padhein aur manage karein.
+• ⚡ Fast Auto Scan – Aapke phone ke saare PDF files ek jagah dekhein.
+• 🔒 Password Protected PDF – Encrypted PDFs ko aasani se kholein.
+• 📑 Bookmarks & Recents – Apni pasandida PDFs aur recent files save karein.
+• 🚫 Zero Ads & High Privacy – Koi ad nahi, aapka data bilkul safe aur private.
+================================================================================

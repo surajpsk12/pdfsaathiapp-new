@@ -1,0 +1,105 @@
+================================================================================
+PRIVACY POLICY FOR PDF SAATHI
+================================================================================
+Effective Date: September 6, 2026
+App Name: PDF Saathi
+Package Name: com.pdfsaathi.app
+Developer: Suraj Kumar
+Contact Email: workwithsurajvansh12@gmail.com
+
+--------------------------------------------------------------------------------
+1. INTRODUCTION
+--------------------------------------------------------------------------------
+Welcome to PDF Saathi ("we," "our," or "us"). We respect your privacy and are 
+committed to protecting it. PDF Saathi is designed as a privacy-focused, 
+100% offline PDF reader and document management tool for Android devices.
+
+This Privacy Policy explains how our application operates, why certain device 
+permissions are requested, and our strict commitment to protecting your personal 
+information and document privacy.
+
+By installing and using PDF Saathi, you agree to the terms of this Privacy Policy.
+
+
+--------------------------------------------------------------------------------
+2. DATA COLLECTION AND USAGE
+--------------------------------------------------------------------------------
+PDF Saathi operates completely OFFLINE.
+
+• Zero Data Collection: We do NOT collect, transmit, store, sell, or share any 
+  personal information, user identity, IP address, device ID, or location data.
+• Document Privacy: Any PDF file or document opened, viewed, or processed 
+  within PDF Saathi remains exclusively on your device. We do NOT upload or 
+  transfer your files to any remote server or cloud service.
+• Local Storage Only: App settings, recent file history, and bookmarks are 
+  saved locally on your device using Android's encrypted local database (Room/SQLite) 
+  and are never transmitted externally.
+
+
+--------------------------------------------------------------------------------
+3. DEVICE PERMISSIONS REQUIRED & PURPOSE
+--------------------------------------------------------------------------------
+To function as a document viewer and manager, PDF Saathi requests access to 
+the following storage permissions:
+
+1. READ_EXTERNAL_STORAGE / READ_MEDIA_DOCUMENTS:
+   Allows the app to locate, list, and open PDF documents stored on your 
+   device storage.
+
+2. MANAGE_EXTERNAL_STORAGE:
+   Required to provide full document management features across your device 
+   (such as organizing, renaming, deleting, or scanning PDF documents across 
+   all storage locations).
+
+All permissions are used strictly for local file operations on your device. 
+No data accessed via these permissions is ever collected or sent outside your device.
+
+
+--------------------------------------------------------------------------------
+4. THIRD-PARTY SERVICES & ANALYTICS
+--------------------------------------------------------------------------------
+PDF Saathi does NOT use any third-party tracking, advertising, or telemetry SDKs.
+
+• No Advertising: We do not display third-party advertisements or use ad networks.
+• No Analytics: We do not include Google Analytics, Firebase Analytics, 
+  Crashlytics, or tracking cookies.
+• No Internet Access: PDF Saathi does not request network/internet permission 
+  in its Android manifest, making it impossible for the app to send data over the internet.
+
+
+--------------------------------------------------------------------------------
+5. DATA SECURITY
+--------------------------------------------------------------------------------
+Since PDF Saathi operates entirely offline and does not transmit data over the 
+internet, your documents and personal data remain protected by Android's built-in 
+application sandboxing and your device's security system (passcode, biometric lock, 
+encryption). We recommend keeping your Android OS updated to ensure maximum security.
+
+
+--------------------------------------------------------------------------------
+6. CHILDREN'S PRIVACY
+--------------------------------------------------------------------------------
+PDF Saathi is suitable for users of all ages, including children under 13. Since the 
+app does not collect or request any personal data from users of any age, it fully 
+complies with the Children's Online Privacy Protection Act (COPPA) and Google 
+Play Console's Families Policy requirements.
+
+
+--------------------------------------------------------------------------------
+7. CHANGES TO THIS PRIVACY POLICY
+--------------------------------------------------------------------------------
+We may update this Privacy Policy from time to time to reflect app updates or regulatory 
+changes. Any updates will be posted on this page with a revised "Effective Date". 
+We encourage you to review this policy periodically.
+
+
+--------------------------------------------------------------------------------
+8. CONTACT US
+--------------------------------------------------------------------------------
+If you have any questions, feedback, or concerns regarding this Privacy Policy or 
+the PDF Saathi application, please contact us at:
+
+• Developer Name: Suraj Kumar
+• Contact Email: workwithsurajvansh12@gmail.com
+================================================================================
+

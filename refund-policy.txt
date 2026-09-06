@@ -1,0 +1,56 @@
+================================================================================
+CANCELLATION & REFUND POLICY FOR PDF SAATHI
+================================================================================
+Last Updated: September 6, 2026
+App Name: PDF Saathi
+Package Name: com.pdfsaathi.app
+Developer: Suraj Kumar
+Contact Email: workwithsurajvansh12@gmail.com
+
+--------------------------------------------------------------------------------
+1. FREE TO USE APPLICATION
+--------------------------------------------------------------------------------
+PDF Saathi is a 100% FREE Android application available on the Google Play Store. 
+
+• No Purchase Required: Downloading, installing, and using PDF Saathi is completely 
+  free of charge.
+• No In-App Purchases: The app currently does not contain any paid features, premium 
+  subscriptions, or digital purchases.
+• No In-App Billing: We do not collect credit card details, UPI, banking, or any payment 
+  information from users.
+
+Because no monetary transaction takes place to download or use PDF Saathi, standard 
+refunds or payment cancellations are NOT APPLICABLE.
+
+
+--------------------------------------------------------------------------------
+2. FUTURE PAID FEATURES OR IN-APP PURCHASES (IF APPLICABLE)
+--------------------------------------------------------------------------------
+If PDF Saathi introduces any optional premium features, donations, or in-app purchases 
+in future updates, all payments will be processed securely through Google Play Billing. 
+
+In such cases:
+• Google Play Refund Policy: All refund requests will be governed by Google Play's 
+  standard refund policy.
+• Requesting Refunds: Users can request a refund directly through their Google Play 
+  Account Order History within 48 hours of purchase under Google Play rules.
+
+
+--------------------------------------------------------------------------------
+3. USER SUPPORT & APP ISSUES
+--------------------------------------------------------------------------------
+Even though PDF Saathi is free, we are committed to providing a reliable experience. 
+If you experience any technical bugs, issue opening specific PDF documents, or crash 
+reports while using PDF Saathi, please reach out to us. We will work to resolve any 
+technical glitches in upcoming app updates.
+
+
+--------------------------------------------------------------------------------
+4. CONTACT US
+--------------------------------------------------------------------------------
+For any queries regarding this Cancellation & Refund Policy or assistance with 
+the PDF Saathi app, please contact:
+
+• Developer Name: Suraj Kumar
+• Contact Email: workwithsurajvansh12@gmail.com
+================================================================================
