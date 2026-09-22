@@ -1,9 +1,17 @@
 package com.pdfsaathi.app.utils
 
+import android.content.ContentValues
 import android.content.Context
+import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import com.pdfsaathi.app.domain.model.PdfDocument
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,5 +69,113 @@ object FileUtil {
         if (timestamp <= 0) return "Unknown"
         val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
         return sdf.format(Date(timestamp))
+    }
+
+    /**
+     * Copies the given PDF document into the device's public Downloads directory.
+     * Uses MediaStore.Downloads on Android 10+ (API 29+) and public external storage on older versions.
+     */
+    fun savePdfToDownloads(context: Context, document: PdfDocument): Result<String> {
+        return try {
+            val safeId1 = if (document.id.isNotBlank()) document.id else ""
+            val safeFileName1 = "${safeId1.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
+            val pdfDir = File(context.filesDir, "saved_pdfs")
+            val cachedFile1 = if (safeId1.isNotBlank()) File(pdfDir, safeFileName1) else null
+
+            val uri = try { Uri.parse(document.uri) } catch (_: Exception) { Uri.EMPTY }
+            val safeId2 = uri.hashCode().toString()
+            val safeFileName2 = "${safeId2.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
+            val cachedFile2 = File(pdfDir, safeFileName2)
+
+            val sourceStream: InputStream = when {
+                cachedFile1 != null && cachedFile1.exists() && cachedFile1.length() > 0L -> {
+                    cachedFile1.inputStream()
+                }
+                cachedFile2.exists() && cachedFile2.length() > 0L -> {
+                    cachedFile2.inputStream()
+                }
+                uri != Uri.EMPTY && uri.scheme == "content" -> {
+                    context.contentResolver.openInputStream(uri)
+                        ?: throw IOException("Unable to open content stream for URI: $uri")
+                }
+                uri != Uri.EMPTY && uri.scheme == "file" -> {
+                    val path = uri.path ?: throw IOException("Invalid file URI path: $uri")
+                    val file = File(path)
+                    if (!file.exists()) throw IOException("File not found at path: $path")
+                    file.inputStream()
+                }
+                document.uri.isNotBlank() && File(document.uri).exists() -> {
+                    File(document.uri).inputStream()
+                }
+                else -> {
+                    throw IOException("Could not locate source PDF data.")
+                }
+            }
+
+            var fileName = document.name.trim()
+            if (fileName.isBlank()) {
+                fileName = "Document.pdf"
+            }
+            if (!fileName.endsWith(".pdf", ignoreCase = true)) {
+                fileName = "$fileName.pdf"
+            }
+            // Sanitize file name for file systems
+            fileName = fileName.replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+                val resolver = context.contentResolver
+                val itemUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: throw IOException("Failed to create MediaStore entry in Downloads.")
+
+                resolver.openOutputStream(itemUri)?.use { out ->
+                    sourceStream.use { input ->
+                        input.copyTo(out)
+                    }
+                } ?: throw IOException("Failed to open output stream to MediaStore.")
+
+                values.clear()
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(itemUri, values, null, null)
+
+                Result.success(fileName)
+            } else {
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!downloadsDir.exists()) {
+                    downloadsDir.mkdirs()
+                }
+                var targetFile = File(downloadsDir, fileName)
+                var count = 1
+                val base = fileName.substringBeforeLast(".")
+                val ext = fileName.substringAfterLast(".", "pdf")
+                while (targetFile.exists()) {
+                    targetFile = File(downloadsDir, "$base ($count).$ext")
+                    count++
+                }
+
+                targetFile.outputStream().use { out ->
+                    sourceStream.use { input ->
+                        input.copyTo(out)
+                    }
+                }
+
+                MediaScannerConnection.scanFile(
+                    context,
+                    arrayOf(targetFile.absolutePath),
+                    arrayOf("application/pdf"),
+                    null
+                )
+
+                Result.success(targetFile.name)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
     }
 }

@@ -17,9 +17,11 @@ import com.pdfsaathi.app.domain.usecase.SaveReadingPositionUseCase
 import com.pdfsaathi.app.domain.usecase.ToggleFavoriteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -55,6 +57,33 @@ class PdfReaderViewModel @Inject constructor(
 
     val currentExtractedText = MutableStateFlow("")
     val isTextSelectionMode = MutableStateFlow(false)
+
+    val isDownloading = MutableStateFlow(false)
+
+    fun downloadCurrentDocument(onComplete: (success: Boolean, message: String) -> Unit) {
+        val doc = currentDocument.value
+        if (doc == null) {
+            onComplete(false, "No document opened to download")
+            return
+        }
+        if (isDownloading.value) return
+
+        viewModelScope.launch {
+            isDownloading.value = true
+            val result = withContext(Dispatchers.IO) {
+                com.pdfsaathi.app.utils.FileUtil.savePdfToDownloads(context, doc)
+            }
+            isDownloading.value = false
+            result.fold(
+                onSuccess = { savedName ->
+                    onComplete(true, "Saved to Downloads: $savedName")
+                },
+                onFailure = { error ->
+                    onComplete(false, error.message ?: "Failed to save PDF to phone storage")
+                }
+            )
+        }
+    }
 
     fun toggleTextSelectionMode() {
         isTextSelectionMode.value = !isTextSelectionMode.value
