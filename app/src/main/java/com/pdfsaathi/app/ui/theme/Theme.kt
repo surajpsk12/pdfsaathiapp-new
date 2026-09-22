@@ -36,7 +36,11 @@ private val DarkColorScheme = darkColorScheme(
     surface = Color(0xFF1E1E1E),
     onPrimary = Color.White,
     onBackground = Color(0xFFF1F5F9),
-    onSurface = Color(0xFFF1F5F9)
+    onSurface = Color(0xFFF1F5F9),
+    surfaceVariant = Color(0xFF262626),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    secondaryContainer = Color(0xFF312E81),
+    onSecondaryContainer = Color(0xFFE0E7FF)
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -47,7 +51,11 @@ private val LightColorScheme = lightColorScheme(
     surface = Color.White,
     onPrimary = Color.White,
     onBackground = Color(0xFF0F172A),
-    onSurface = Color(0xFF0F172A)
+    onSurface = Color(0xFF0F172A),
+    surfaceVariant = Color(0xFFF1F5F9),
+    onSurfaceVariant = Color(0xFF64748B),
+    secondaryContainer = Color(0xFFEEF2FF),
+    onSecondaryContainer = PrimaryIndigo
 )
 
 val AppTypography = Typography(

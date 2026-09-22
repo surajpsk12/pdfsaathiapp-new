@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +24,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -29,6 +34,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.pdfsaathi.app.ui.developer.DeveloperScreen
 import com.pdfsaathi.app.ui.documents.AllDocumentsScreen
 import com.pdfsaathi.app.ui.favorites.FavoritesScreen
 import com.pdfsaathi.app.ui.home.HomeScreen
@@ -43,6 +49,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     object Documents : Screen("documents", "Files", Icons.Default.Folder)
     object Favorites : Screen("favorites", "Favorites", Icons.Default.Star)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
+    object Developer : Screen("developer", "Developer", Icons.Default.Person)
     object Search : Screen("search", "Search", Icons.Default.Search)
     object Reader : Screen("reader/{documentId}", "Reader") {
         fun createRoute(documentId: String) = "reader/${Uri.encode(documentId)}"
@@ -55,14 +62,23 @@ fun PdfNavGraph(
     externalPdfUri: Uri? = null
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentDestination = navBackStackEntry?.destination
+    val currentRoute = currentDestination?.route
 
     val bottomNavItems = listOf(
         Screen.Home,
-        Screen.Settings
+        Screen.Settings,
+        Screen.Developer
     )
 
     val showBottomBar = currentRoute in bottomNavItems.map { it.route }
+
+    val selectedRoute = when (currentRoute) {
+        Screen.Home.route -> Screen.Home.route
+        Screen.Settings.route -> Screen.Settings.route
+        Screen.Developer.route -> Screen.Developer.route
+        else -> null
+    }
 
     LaunchedEffect(externalPdfUri) {
         externalPdfUri?.let { uri ->
@@ -76,19 +92,34 @@ fun PdfNavGraph(
             if (showBottomBar) {
                 NavigationBar {
                     bottomNavItems.forEach { item ->
+                        val isSelected = selectedRoute == item.route
                         NavigationBarItem(
                             icon = { item.icon?.let { Icon(it, contentDescription = item.title) } },
-                            label = { Text(item.title) },
-                            selected = currentRoute == item.route,
+                            label = {
+                                Text(
+                                    text = item.title,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            selected = isSelected,
                             onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                                if (selectedRoute != item.route) {
+                                    navController.navigate(item.route) {
+                                        popUpTo(Screen.Home.route) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
                                 }
-                            }
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                            )
                         )
                     }
                 }
@@ -133,6 +164,9 @@ fun PdfNavGraph(
                 }
                 composable(Screen.Settings.route) {
                     SettingsScreen()
+                }
+                composable(Screen.Developer.route) {
+                    DeveloperScreen()
                 }
                 composable(Screen.Search.route) {
                     SearchScreen(

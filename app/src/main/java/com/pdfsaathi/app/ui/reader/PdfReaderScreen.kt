@@ -600,9 +600,9 @@ fun PdfReaderScreen(
             ) {
                 Surface(
                     modifier = Modifier.wrapContentWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
+                    shape = RoundedCornerShape(22.dp),
+                    color = Color(0xFF1E1E1E).copy(alpha = 0.90f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
                     shadowElevation = 8.dp
                 ) {
                     Column(
@@ -618,13 +618,13 @@ fun PdfReaderScreen(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                color = Color(0xFF818CF8).copy(alpha = 0.22f)
                             ) {
                                 Text(
                                     text = "$page / $totalPages",
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = Color(0xFF818CF8)
                                 )
                             }
 
@@ -644,7 +644,7 @@ fun PdfReaderScreen(
                                     Icon(
                                         imageVector = Icons.Default.ChevronLeft,
                                         contentDescription = "Prev Page",
-                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        tint = Color.White.copy(alpha = 0.90f),
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -664,7 +664,7 @@ fun PdfReaderScreen(
                                     Icon(
                                         imageVector = Icons.Default.ChevronRight,
                                         contentDescription = "Next Page",
-                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        tint = Color.White.copy(alpha = 0.90f),
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -684,9 +684,9 @@ fun PdfReaderScreen(
                             },
                             valueRange = 1f..totalPages.toFloat().coerceAtLeast(1f),
                             colors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                                thumbColor = Color(0xFF818CF8),
+                                activeTrackColor = Color(0xFF818CF8),
+                                inactiveTrackColor = Color.White.copy(alpha = 0.20f)
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
