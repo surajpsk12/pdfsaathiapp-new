@@ -1,11 +1,15 @@
 package com.pdfsaathi.app.ui.search
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -44,48 +48,56 @@ fun SearchScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Search PDFs") }) }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(innerPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { viewModel.searchQuery.value = it },
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Search by document title...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.searchQuery.value = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    .fillMaxSize()
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .widthIn(max = 840.dp)
+            ) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { viewModel.searchQuery.value = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    placeholder = { Text("Search by document title...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.searchQuery.value = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
                         }
-                    }
-                },
-                singleLine = true,
-                shape = MaterialTheme.shapes.large
-            )
-
-            if (results.isEmpty() && query.isNotEmpty()) {
-                EmptyStateWidget(
-                    title = "No Matches Found",
-                    subtitle = "No PDF files match '$query'. Try another keyword."
+                    },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.large
                 )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(results) { doc ->
-                        PdfDocumentCardRow(
-                            document = doc,
-                            onClick = { onOpenReader(doc) },
-                            onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) },
-                            onDelete = { documentToDelete = doc }
-                        )
+
+                if (results.isEmpty() && query.isNotEmpty()) {
+                    EmptyStateWidget(
+                        title = "No Matches Found",
+                        subtitle = "No PDF files match '$query'. Try another keyword."
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(results) { doc ->
+                            PdfDocumentCardRow(
+                                document = doc,
+                                onClick = { onOpenReader(doc) },
+                                onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) },
+                                onDelete = { documentToDelete = doc }
+                            )
+                        }
                     }
                 }
             }

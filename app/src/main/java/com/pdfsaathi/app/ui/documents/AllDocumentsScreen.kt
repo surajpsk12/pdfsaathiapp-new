@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -92,116 +94,123 @@ fun AllDocumentsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(innerPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Filter Toolbar (Sort Dropdown + View Mode Toggle)
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .widthIn(max = 1000.dp)
             ) {
-                // Sort Dropdown Button
-                Box {
+                // Filter Toolbar (Sort Dropdown + View Mode Toggle)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Sort Dropdown Button
+                    Box {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface,
+                            shadowElevation = 1.dp,
+                            modifier = Modifier.clickable { showSortMenu = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = when (currentSort) {
+                                        SortOption.NAME -> "Sort by Name"
+                                        SortOption.DATE -> "Sort by Recent"
+                                        SortOption.SIZE -> "Sort by Size"
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Sort by Name") },
+                                onClick = {
+                                    viewModel.sortOption.value = SortOption.NAME
+                                    showSortMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sort by Recent") },
+                                onClick = {
+                                    viewModel.sortOption.value = SortOption.DATE
+                                    showSortMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sort by Size") },
+                                onClick = {
+                                    viewModel.sortOption.value = SortOption.SIZE
+                                    showSortMenu = false
+                                }
+                            )
+                        }
+                    }
+
+                    // View Mode Toggle (List vs Grid)
                     Surface(
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 1.dp,
-                        modifier = Modifier.clickable { showSortMenu = true }
+                        color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = when (currentSort) {
-                                    SortOption.NAME -> "Sort by Name"
-                                    SortOption.DATE -> "Sort by Recent"
-                                    SortOption.SIZE -> "Sort by Size"
-                                },
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        Row(modifier = Modifier.padding(2.dp)) {
+                            IconButton(
+                                onClick = { isGridView = false },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.List,
+                                    contentDescription = "List View",
+                                    tint = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            IconButton(
+                                onClick = { isGridView = true },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.GridView,
+                                    contentDescription = "Grid View",
+                                    tint = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
-                    }
-
-                    DropdownMenu(
-                        expanded = showSortMenu,
-                        onDismissRequest = { showSortMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Sort by Name") },
-                            onClick = {
-                                viewModel.sortOption.value = SortOption.NAME
-                                showSortMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Sort by Recent") },
-                            onClick = {
-                                viewModel.sortOption.value = SortOption.DATE
-                                showSortMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Sort by Size") },
-                            onClick = {
-                                viewModel.sortOption.value = SortOption.SIZE
-                                showSortMenu = false
-                            }
-                        )
                     }
                 }
 
-                // View Mode Toggle (List vs Grid)
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Row(modifier = Modifier.padding(2.dp)) {
-                        IconButton(
-                            onClick = { isGridView = false },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.List,
-                                contentDescription = "List View",
-                                tint = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        IconButton(
-                            onClick = { isGridView = true },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.GridView,
-                                contentDescription = "Grid View",
-                                tint = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Documents Content View
-            if (documents.isEmpty()) {
-                EmptyStateWidget(
-                    title = "No Documents Found",
-                    subtitle = "PDF Saathi is scanning internal & external storage for all .pdf files."
-                )
-            } else if (isGridView) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                // Documents Content View
+                if (documents.isEmpty()) {
+                    EmptyStateWidget(
+                        title = "No Documents Found",
+                        subtitle = "PDF Saathi is scanning internal & external storage for all .pdf files."
+                    )
+                } else if (isGridView) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 160.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                     items(documents) { doc ->
                         PdfDocumentCardRow(
                             document = doc,
@@ -228,8 +237,9 @@ fun AllDocumentsScreen(
                 }
             }
         }
+    }
 
-        // Delete Confirmation Dialog
+    // Delete Confirmation Dialog
         documentToDelete?.let { doc ->
             AlertDialog(
                 onDismissRequest = { documentToDelete = null },

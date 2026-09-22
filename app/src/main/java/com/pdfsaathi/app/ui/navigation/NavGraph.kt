@@ -1,6 +1,9 @@
 package com.pdfsaathi.app.ui.navigation
 
 import android.net.Uri
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
@@ -68,6 +71,7 @@ fun PdfNavGraph(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
@@ -91,54 +95,60 @@ fun PdfNavGraph(
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Splash.route,
-            modifier = Modifier.padding(innerPadding)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = innerPadding.calculateBottomPadding())
         ) {
-            composable(Screen.Splash.route) {
-                SplashScreen(
-                    onSplashFinished = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Splash.route,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                composable(Screen.Splash.route) {
+                    SplashScreen(
+                        onSplashFinished = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Splash.route) { inclusive = true }
+                            }
                         }
-                    }
-                )
-            }
-            composable(Screen.Home.route) {
-                HomeScreen(
-                    onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) },
-                    onNavigateToSearch = { navController.navigate(Screen.Search.route) }
-                )
-            }
-            composable(Screen.Documents.route) {
-                AllDocumentsScreen(
-                    onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) },
-                    onBackClick = { navController.navigate(Screen.Home.route) }
-                )
-            }
-            composable(Screen.Favorites.route) {
-                FavoritesScreen(
-                    onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) }
-                )
-            }
-            composable(Screen.Settings.route) {
-                SettingsScreen()
-            }
-            composable(Screen.Search.route) {
-                SearchScreen(
-                    onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) }
-                )
-            }
-            composable(
-                route = Screen.Reader.route,
-                arguments = listOf(navArgument("documentId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val documentId = backStackEntry.arguments?.getString("documentId") ?: ""
-                PdfReaderScreen(
-                    documentId = documentId,
-                    onBackClick = { navController.popBackStack() }
-                )
+                    )
+                }
+                composable(Screen.Home.route) {
+                    HomeScreen(
+                        onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) },
+                        onNavigateToSearch = { navController.navigate(Screen.Search.route) }
+                    )
+                }
+                composable(Screen.Documents.route) {
+                    AllDocumentsScreen(
+                        onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) },
+                        onBackClick = { navController.navigate(Screen.Home.route) }
+                    )
+                }
+                composable(Screen.Favorites.route) {
+                    FavoritesScreen(
+                        onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) }
+                    )
+                }
+                composable(Screen.Settings.route) {
+                    SettingsScreen()
+                }
+                composable(Screen.Search.route) {
+                    SearchScreen(
+                        onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) }
+                    )
+                }
+                composable(
+                    route = Screen.Reader.route,
+                    arguments = listOf(navArgument("documentId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val documentId = backStackEntry.arguments?.getString("documentId") ?: ""
+                    PdfReaderScreen(
+                        documentId = documentId,
+                        onBackClick = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }

@@ -1,9 +1,13 @@
 package com.pdfsaathi.app.ui.favorites
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,27 +52,34 @@ fun FavoritesScreen(
             )
         }
     ) { innerPadding ->
-        if (favorites.isEmpty()) {
-            EmptyStateWidget(
-                title = "No Favorites Yet",
-                subtitle = "Mark PDFs as favorites to easily find and access them offline.",
-                modifier = Modifier.padding(innerPadding)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(bottom = 80.dp, start = 16.dp, end = 16.dp, top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(favorites) { doc ->
-                    PdfDocumentCardRow(
-                        document = doc,
-                        onClick = { onOpenReader(doc) },
-                        onToggleFavorite = { viewModel.removeFavorite(doc.id) },
-                        onDelete = { documentToDelete = doc }
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            if (favorites.isEmpty()) {
+                EmptyStateWidget(
+                    title = "No Favorites Yet",
+                    subtitle = "Mark PDFs as favorites to easily find and access them offline."
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .widthIn(max = 840.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp, start = 16.dp, end = 16.dp, top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(favorites) { doc ->
+                        PdfDocumentCardRow(
+                            document = doc,
+                            onClick = { onOpenReader(doc) },
+                            onToggleFavorite = { viewModel.removeFavorite(doc.id) },
+                            onDelete = { documentToDelete = doc }
+                        )
+                    }
                 }
             }
         }

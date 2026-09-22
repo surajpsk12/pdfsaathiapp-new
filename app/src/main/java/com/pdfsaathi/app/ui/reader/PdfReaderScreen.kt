@@ -62,6 +62,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -201,18 +202,84 @@ fun PdfReaderScreen(
         ReadingTheme.SYSTEM -> MaterialTheme.colorScheme.background
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-    ) {
-        // Continuous Scroll Mode View (Vertical Scroll)
-        if (viewerMode == "continuous") {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = displayTitle,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "Page $page of $totalPages",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.toggleTextSelectionMode() }) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Text Selection & Copy",
+                            tint = if (isTextSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = { viewModel.toggleViewerMode() }) {
+                        Icon(
+                            imageVector = Icons.Default.ViewAgenda,
+                            contentDescription = "Viewer Mode",
+                            tint = if (viewerMode == "continuous") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = {
+                        val nextTheme = when (theme) {
+                            ReadingTheme.LIGHT -> ReadingTheme.DARK
+                            ReadingTheme.DARK -> ReadingTheme.SEPIA
+                            else -> ReadingTheme.LIGHT
+                        }
+                        viewModel.changeTheme(nextTheme)
+                    }) {
+                        Icon(Icons.Default.Palette, contentDescription = "Change Reader Theme")
+                    }
+                    IconButton(onClick = { showIconHelpDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Icon Features & Help Guide",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+                )
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(backgroundColor)
+        ) {
+            // Continuous Scroll Mode View (Vertical Scroll)
+            if (viewerMode == "continuous") {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    top = 70.dp,
+                    top = 10.dp,
                     bottom = 70.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
@@ -360,7 +427,7 @@ fun PdfReaderScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 68.dp, bottom = 80.dp, start = 10.dp, end = 10.dp)
+                        .padding(top = 8.dp, bottom = 80.dp, start = 10.dp, end = 10.dp)
                         .clipToBounds()
                         .pointerInput(Unit) {
                             detectTapGestures(
@@ -488,70 +555,6 @@ fun PdfReaderScreen(
             }
         }
 
-        // Permanent Top Bar Header
-        TopAppBar(
-            title = {
-                Column {
-                    Text(
-                        text = displayTitle,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "Page $page of $totalPages",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            navigationIcon = {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-            },
-            actions = {
-                IconButton(onClick = { viewModel.toggleTextSelectionMode() }) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Text Selection & Copy",
-                        tint = if (isTextSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                IconButton(onClick = { viewModel.toggleViewerMode() }) {
-                    Icon(
-                        imageVector = Icons.Default.ViewAgenda,
-                        contentDescription = "Viewer Mode",
-                        tint = if (viewerMode == "continuous") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                IconButton(onClick = {
-                    val nextTheme = when (theme) {
-                        ReadingTheme.LIGHT -> ReadingTheme.DARK
-                        ReadingTheme.DARK -> ReadingTheme.SEPIA
-                        else -> ReadingTheme.LIGHT
-                    }
-                    viewModel.changeTheme(nextTheme)
-                }) {
-                    Icon(Icons.Default.Palette, contentDescription = "Change Reader Theme")
-                }
-                IconButton(onClick = { showIconHelpDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Icon Features & Help Guide",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-            ),
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
-
         // Bottom Seeker Controls Overlay (Only for Single/Horizontal Page Mode)
         if (viewerMode == "single") {
             AnimatedVisibility(
@@ -660,6 +663,7 @@ fun PdfReaderScreen(
                 }
             }
         }
+    }
 
         // Interactive Page Jump Dialog
         if (showJumpDialog) {

@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -126,12 +128,19 @@ fun HomeScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 30.dp)
+            contentAlignment = Alignment.TopCenter
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .widthIn(max = 840.dp),
+                contentPadding = PaddingValues(bottom = 30.dp)
+            ) {
             // Hero Open PDF File Action Card
             item {
                 Card(
@@ -214,6 +223,7 @@ fun HomeScreen(
                 }
             }
         }
+    }
 
         // Delete Confirmation Dialog
         documentToDelete?.let { doc ->
