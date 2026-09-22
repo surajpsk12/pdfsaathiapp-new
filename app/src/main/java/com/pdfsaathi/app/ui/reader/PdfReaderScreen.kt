@@ -53,6 +53,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -123,6 +124,7 @@ fun PdfReaderScreen(
     val isTextSelectionMode by viewModel.isTextSelectionMode.collectAsState()
     val currentExtractedText by viewModel.currentExtractedText.collectAsState()
     val isDownloading by viewModel.isDownloading.collectAsState()
+    val isSharing by viewModel.isSharing.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     var scale by remember { mutableFloatStateOf(1f) }
@@ -252,6 +254,24 @@ fun PdfReaderScreen(
                             Icon(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = "Download PDF to Phone Storage",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                    IconButton(
+                        onClick = { viewModel.shareCurrentDocument(context) },
+                        enabled = !isSharing
+                    ) {
+                        if (isSharing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share PDF to any app",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }

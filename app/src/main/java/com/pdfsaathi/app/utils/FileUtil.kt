@@ -72,45 +72,87 @@ object FileUtil {
     }
 
     /**
+     * Resolves and opens an InputStream for the given document from local cache or storage URI.
+     */
+    fun openPdfInputStream(context: Context, document: PdfDocument): InputStream? {
+        val safeId1 = if (document.id.isNotBlank()) document.id else ""
+        val safeFileName1 = "${safeId1.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
+        val pdfDir = File(context.filesDir, "saved_pdfs")
+        val cachedFile1 = if (safeId1.isNotBlank()) File(pdfDir, safeFileName1) else null
+
+        val uri = try { Uri.parse(document.uri) } catch (_: Exception) { Uri.EMPTY }
+        val safeId2 = uri.hashCode().toString()
+        val safeFileName2 = "${safeId2.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
+        val cachedFile2 = File(pdfDir, safeFileName2)
+
+        return when {
+            cachedFile1 != null && cachedFile1.exists() && cachedFile1.length() > 0L -> {
+                cachedFile1.inputStream()
+            }
+            cachedFile2.exists() && cachedFile2.length() > 0L -> {
+                cachedFile2.inputStream()
+            }
+            uri != Uri.EMPTY && uri.scheme == "content" -> {
+                context.contentResolver.openInputStream(uri)
+            }
+            uri != Uri.EMPTY && uri.scheme == "file" -> {
+                val path = uri.path
+                if (path != null) {
+                    val file = File(path)
+                    if (file.exists()) file.inputStream() else null
+                } else null
+            }
+            document.uri.isNotBlank() && File(document.uri).exists() -> {
+                File(document.uri).inputStream()
+            }
+            else -> null
+        }
+    }
+
+    /**
+     * Prepares a shareable FileProvider content URI with the proper filename for sharing with external apps.
+     */
+    fun getShareablePdfUri(context: Context, document: PdfDocument): Uri? {
+        return try {
+            val sourceStream = openPdfInputStream(context, document) ?: return null
+
+            var fileName = document.name.trim()
+            if (fileName.isBlank()) {
+                fileName = "Document.pdf"
+            }
+            if (!fileName.endsWith(".pdf", ignoreCase = true)) {
+                fileName = "$fileName.pdf"
+            }
+            fileName = fileName.replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+
+            val shareDir = File(context.cacheDir, "shared_pdfs").apply { if (!exists()) mkdirs() }
+            val shareFile = File(shareDir, fileName)
+
+            shareFile.outputStream().use { out ->
+                sourceStream.use { input ->
+                    input.copyTo(out)
+                }
+            }
+
+            androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                shareFile
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
      * Copies the given PDF document into the device's public Downloads directory.
      * Uses MediaStore.Downloads on Android 10+ (API 29+) and public external storage on older versions.
      */
     fun savePdfToDownloads(context: Context, document: PdfDocument): Result<String> {
         return try {
-            val safeId1 = if (document.id.isNotBlank()) document.id else ""
-            val safeFileName1 = "${safeId1.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
-            val pdfDir = File(context.filesDir, "saved_pdfs")
-            val cachedFile1 = if (safeId1.isNotBlank()) File(pdfDir, safeFileName1) else null
-
-            val uri = try { Uri.parse(document.uri) } catch (_: Exception) { Uri.EMPTY }
-            val safeId2 = uri.hashCode().toString()
-            val safeFileName2 = "${safeId2.replace("[^a-zA-Z0-9_-]".toRegex(), "_")}.pdf"
-            val cachedFile2 = File(pdfDir, safeFileName2)
-
-            val sourceStream: InputStream = when {
-                cachedFile1 != null && cachedFile1.exists() && cachedFile1.length() > 0L -> {
-                    cachedFile1.inputStream()
-                }
-                cachedFile2.exists() && cachedFile2.length() > 0L -> {
-                    cachedFile2.inputStream()
-                }
-                uri != Uri.EMPTY && uri.scheme == "content" -> {
-                    context.contentResolver.openInputStream(uri)
-                        ?: throw IOException("Unable to open content stream for URI: $uri")
-                }
-                uri != Uri.EMPTY && uri.scheme == "file" -> {
-                    val path = uri.path ?: throw IOException("Invalid file URI path: $uri")
-                    val file = File(path)
-                    if (!file.exists()) throw IOException("File not found at path: $path")
-                    file.inputStream()
-                }
-                document.uri.isNotBlank() && File(document.uri).exists() -> {
-                    File(document.uri).inputStream()
-                }
-                else -> {
-                    throw IOException("Could not locate source PDF data.")
-                }
-            }
+            val sourceStream = openPdfInputStream(context, document)
+                ?: throw IOException("Could not locate source PDF data.")
 
             var fileName = document.name.trim()
             if (fileName.isBlank()) {

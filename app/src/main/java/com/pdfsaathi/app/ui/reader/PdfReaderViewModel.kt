@@ -85,6 +85,43 @@ class PdfReaderViewModel @Inject constructor(
         }
     }
 
+    val isSharing = MutableStateFlow(false)
+
+    fun shareCurrentDocument(targetContext: Context) {
+        val doc = currentDocument.value ?: run {
+            android.widget.Toast.makeText(targetContext, "No document opened to share", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (isSharing.value) return
+
+        viewModelScope.launch {
+            isSharing.value = true
+            val shareUri = withContext(Dispatchers.IO) {
+                com.pdfsaathi.app.utils.FileUtil.getShareablePdfUri(targetContext, doc)
+            }
+            isSharing.value = false
+
+            if (shareUri != null) {
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(android.content.Intent.EXTRA_STREAM, shareUri)
+                    putExtra(android.content.Intent.EXTRA_SUBJECT, doc.name)
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                val chooser = android.content.Intent.createChooser(intent, "Share PDF to any app").apply {
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                try {
+                    targetContext.startActivity(chooser)
+                } catch (_: Exception) {
+                    android.widget.Toast.makeText(targetContext, "No app found to handle sharing", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                android.widget.Toast.makeText(targetContext, "Unable to prepare PDF file for sharing", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     fun toggleTextSelectionMode() {
         isTextSelectionMode.value = !isTextSelectionMode.value
         if (isTextSelectionMode.value) {

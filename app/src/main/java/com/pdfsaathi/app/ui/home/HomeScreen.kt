@@ -110,7 +110,7 @@ fun HomeScreen(
                                 )
                             )
                             Text(
-                                text = "Your Recent Documents",
+                                text = "Your PDF Library",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
