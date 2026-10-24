@@ -83,34 +83,20 @@ fun PdfDocumentCardRow(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // PDF Icon Box with Crimson/Red PDF badge styling
+            // PDF Icon Box with Stitch Warm Orange badge styling
             Box(
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFFEF4444), Color(0xFFDC2626))
-                        )
-                    ),
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.PictureAsPdf,
-                        contentDescription = "PDF",
-                        tint = Color.White,
-                        modifier = Modifier.size(26.dp)
-                    )
-                    Text(
-                        text = "PDF",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp
-                        ),
-                        color = Color.White
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Description,
+                    contentDescription = "PDF Document",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
             Spacer(modifier = Modifier.width(14.dp))
@@ -122,16 +108,16 @@ fun PdfDocumentCardRow(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp
                     ),
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = document.formattedSize,
                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = " • ",
@@ -146,12 +132,22 @@ fun PdfDocumentCardRow(
                 }
             }
 
+            if (onToggleFavorite != null) {
+                IconButton(onClick = onToggleFavorite) {
+                    Icon(
+                        imageVector = if (document.isFavorite) Icons.Default.Star else Icons.Outlined.StarBorder,
+                        contentDescription = "Toggle Star",
+                        tint = if (document.isFavorite) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
             if (onDelete != null) {
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete Document",
-                        tint = Color(0xFFEF4444)
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                     )
                 }
             }

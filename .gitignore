@@ -42,3 +42,9 @@ local.properties
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Temporary test archives and extractions
+test.zip
+test_extract/
+scratch/
+

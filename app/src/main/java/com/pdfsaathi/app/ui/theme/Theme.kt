@@ -21,41 +21,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
-// Colors
-val PrimaryIndigo = Color(0xFF4F46E5)
-val SecondaryBlue = Color(0xFF0284C7)
-val LightSurface = Color(0xFFF8F9FA)
-val DarkSurface = Color(0xFF121212)
+// Colors - Stitch Warm Orange Design System
+val PrimaryOrange = Color(0xFFEA580C)
+val PrimaryOrangeContainer = Color(0xFFFFEDD5)
+val SecondaryOrange = Color(0xFFC2410C)
+val LightSurface = Color(0xFFFAFAFA)
+val DarkSurface = Color(0xFF121417)
 val SepiaSurface = Color(0xFFFBF0D9)
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF818CF8),
-    secondary = Color(0xFF38BDF8),
-    tertiary = Color(0xFFF59E0B),
-    background = Color(0xFF121212),
-    surface = Color(0xFF1E1E1E),
-    onPrimary = Color.White,
+    primary = Color(0xFFFB923C), // Vibrant Light Orange for Dark Mode
+    primaryContainer = Color(0xFF7C2D12),
+    onPrimary = Color(0xFF431407),
+    onPrimaryContainer = Color(0xFFFFDBC8),
+    secondary = Color(0xFFF97316),
+    secondaryContainer = Color(0xFF431407),
+    onSecondaryContainer = Color(0xFFFFDBC8),
+    tertiary = Color(0xFFFBBF24),
+    background = Color(0xFF121417),
+    surface = Color(0xFF1A1D23),
     onBackground = Color(0xFFF1F5F9),
     onSurface = Color(0xFFF1F5F9),
-    surfaceVariant = Color(0xFF262626),
-    onSurfaceVariant = Color(0xFF94A3B8),
-    secondaryContainer = Color(0xFF312E81),
-    onSecondaryContainer = Color(0xFFE0E7FF)
+    surfaceVariant = Color(0xFF262A33),
+    onSurfaceVariant = Color(0xFF94A3B8)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryIndigo,
-    secondary = SecondaryBlue,
+    primary = PrimaryOrange,
+    primaryContainer = PrimaryOrangeContainer,
+    onPrimary = Color.White,
+    onPrimaryContainer = Color(0xFF9A3412),
+    secondary = SecondaryOrange,
+    secondaryContainer = Color(0xFFFFF7ED),
+    onSecondaryContainer = PrimaryOrange,
     tertiary = Color(0xFFD97706),
     background = LightSurface,
     surface = Color.White,
-    onPrimary = Color.White,
-    onBackground = Color(0xFF0F172A),
-    onSurface = Color(0xFF0F172A),
-    surfaceVariant = Color(0xFFF1F5F9),
-    onSurfaceVariant = Color(0xFF64748B),
-    secondaryContainer = Color(0xFFEEF2FF),
-    onSecondaryContainer = PrimaryIndigo
+    onBackground = Color(0xFF131B2E),
+    onSurface = Color(0xFF131B2E),
+    surfaceVariant = Color(0xFFF3F4F6),
+    onSurfaceVariant = Color(0xFF64748B)
 )
 
 val AppTypography = Typography(

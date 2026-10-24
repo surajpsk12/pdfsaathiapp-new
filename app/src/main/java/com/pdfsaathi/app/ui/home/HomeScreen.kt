@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,17 +21,24 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SdStorage
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +46,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -59,6 +68,8 @@ import com.pdfsaathi.app.domain.model.PdfDocument
 import com.pdfsaathi.app.ui.components.EmptyStateWidget
 import com.pdfsaathi.app.ui.components.PdfDocumentCardRow
 
+enum class HomeFilterTab { ALL, RECENT, STARRED }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -67,6 +78,9 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val recents by viewModel.recentDocuments.collectAsState()
+    val allDocs by viewModel.allDocuments.collectAsState()
+    val favorites by viewModel.favoriteDocuments.collectAsState()
+    var selectedTab by remember { mutableStateOf(HomeFilterTab.ALL) }
     var documentToDelete by remember { mutableStateOf<PdfDocument?>(null) }
 
     val context = LocalContext.current
@@ -91,6 +105,9 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
@@ -107,10 +124,11 @@ fun HomeScreen(
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 20.sp
-                                )
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Your PDF Library",
+                                text = "Local PDF Reader & Manager",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -119,12 +137,30 @@ fun HomeScreen(
                 },
                 actions = {
                     IconButton(onClick = { viewModel.scanStorage() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Scan Storage")
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Rescan Storage",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     IconButton(onClick = onNavigateToSearch) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Search Documents",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
+            )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { launcher.launch(arrayOf("application/pdf")) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                shape = CircleShape,
+                icon = { Icon(Icons.Default.Add, contentDescription = "Open PDF") },
+                text = { Text("Open PDF", fontWeight = FontWeight.Bold) }
             )
         }
     ) { innerPadding ->
@@ -139,91 +175,240 @@ fun HomeScreen(
                     .fillMaxSize()
                     .wrapContentWidth(Alignment.CenterHorizontally)
                     .widthIn(max = 840.dp),
-                contentPadding = PaddingValues(bottom = 30.dp)
+                contentPadding = PaddingValues(bottom = 90.dp)
             ) {
-            // Hero Open PDF File Action Card
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .clickable { launcher.launch(arrayOf("application/pdf")) },
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
+                // Stitch Storage Status Pill Banner
+                item {
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
-                        Box(
+                        Row(
                             modifier = Modifier
-                                .size(52.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Open PDF",
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.SdStorage,
+                                    contentDescription = "Storage",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "${allDocs.size} PDF Documents found on device",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 13.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            IconButton(
+                                onClick = { viewModel.scanStorage() },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Rescan",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Stitch Hero Open PDF File Interactive Card
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .clickable { launcher.launch(arrayOf("application/pdf")) },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(MaterialTheme.colorScheme.primary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.FolderOpen,
+                                        contentDescription = "Open Storage",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(14.dp))
+                                Column {
+                                    Text(
+                                        text = "Open PDF File",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Select and read any PDF document from device storage",
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.UploadFile,
+                                        contentDescription = "Browse",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Browse Storage",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp
+                                        ),
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Stitch Document Filter Pills Row (All, Recent, Starred)
+                item {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            FilterChip(
+                                selected = selectedTab == HomeFilterTab.ALL,
+                                onClick = { selectedTab = HomeFilterTab.ALL },
+                                label = { Text("All (${allDocs.size})") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = Color.White
+                                ),
+                                shape = CircleShape
                             )
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Open PDF File",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp
+                        item {
+                            FilterChip(
+                                selected = selectedTab == HomeFilterTab.RECENT,
+                                onClick = { selectedTab = HomeFilterTab.RECENT },
+                                label = { Text("Recent (${recents.size})") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = Color.White
                                 ),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                shape = CircleShape
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Select any PDF document from your storage",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                                fontSize = 13.sp
+                        }
+                        item {
+                            FilterChip(
+                                selected = selectedTab == HomeFilterTab.STARRED,
+                                onClick = { selectedTab = HomeFilterTab.STARRED },
+                                label = { Text("Starred (${favorites.size})") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = Color.White
+                                ),
+                                shape = CircleShape
                             )
                         }
                     }
                 }
-            }
 
-            // Recents Section (Vertical List)
-            item {
-                Text(
-                    text = "Recent Files",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            if (recents.isEmpty()) {
+                // Section Header
                 item {
-                    EmptyStateWidget(
-                        title = "No Recent Files",
-                        subtitle = "Tap 'Open PDF File' above to browse and open any document."
+                    val sectionTitle = when (selectedTab) {
+                        HomeFilterTab.ALL -> "All Documents"
+                        HomeFilterTab.RECENT -> "Recent Files"
+                        HomeFilterTab.STARRED -> "Starred / Favorites"
+                    }
+                    Text(
+                        text = sectionTitle,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp
+                        ),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
-            } else {
-                items(recents) { doc ->
-                    PdfDocumentCardRow(
-                        document = doc,
-                        onClick = { onOpenReader(doc) },
-                        onDelete = { documentToDelete = doc },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                    )
+
+                val currentList = when (selectedTab) {
+                    HomeFilterTab.ALL -> allDocs
+                    HomeFilterTab.RECENT -> recents
+                    HomeFilterTab.STARRED -> favorites
+                }
+
+                if (currentList.isEmpty()) {
+                    item {
+                        EmptyStateWidget(
+                            title = when (selectedTab) {
+                                HomeFilterTab.ALL -> "No PDF Documents Found"
+                                HomeFilterTab.RECENT -> "No Recent Files"
+                                HomeFilterTab.STARRED -> "No Starred Documents"
+                            },
+                            subtitle = when (selectedTab) {
+                                HomeFilterTab.ALL -> "Tap 'Browse Storage' above or scan to detect PDF files."
+                                HomeFilterTab.RECENT -> "Open any PDF file to resume reading here."
+                                HomeFilterTab.STARRED -> "Star any document for quick offline access."
+                            }
+                        )
+                    }
+                } else {
+                    items(currentList) { doc ->
+                        PdfDocumentCardRow(
+                            document = doc,
+                            onClick = { onOpenReader(doc) },
+                            onToggleFavorite = { viewModel.toggleFavorite(doc.id, doc.isFavorite) },
+                            onDelete = { documentToDelete = doc },
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
+                        )
+                    }
                 }
             }
         }
-    }
 
         // Delete Confirmation Dialog
         documentToDelete?.let { doc ->

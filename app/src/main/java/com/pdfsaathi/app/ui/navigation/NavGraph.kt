@@ -67,6 +67,7 @@ fun PdfNavGraph(
 
     val bottomNavItems = listOf(
         Screen.Home,
+        Screen.Favorites,
         Screen.Settings,
         Screen.Developer
     )
@@ -75,6 +76,7 @@ fun PdfNavGraph(
 
     val selectedRoute = when (currentRoute) {
         Screen.Home.route -> Screen.Home.route
+        Screen.Favorites.route -> Screen.Favorites.route
         Screen.Settings.route -> Screen.Settings.route
         Screen.Developer.route -> Screen.Developer.route
         else -> null

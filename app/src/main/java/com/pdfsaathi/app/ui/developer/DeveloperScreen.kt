@@ -139,7 +139,7 @@ fun DeveloperScreen() {
                             .padding(22.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Profile Avatar with Vibrant Gradient Ring
+                        // Profile Avatar with Stitch Warm Orange Gradient Ring
                         Box(
                             modifier = Modifier
                                 .size(92.dp)
@@ -147,9 +147,9 @@ fun DeveloperScreen() {
                                 .background(
                                     Brush.linearGradient(
                                         colors = listOf(
-                                            MaterialTheme.colorScheme.primary,
-                                            Color(0xFF6366F1),
-                                            Color(0xFF0EA5E9)
+                                            Color(0xFFEA580C),
+                                            Color(0xFFF97316),
+                                            Color(0xFFFB923C)
                                         )
                                     )
                                 )
@@ -163,21 +163,14 @@ fun DeveloperScreen() {
                                     .fillMaxSize()
                                     .padding(4.dp)
                                     .clip(CircleShape)
-                                    .background(
-                                        Brush.linearGradient(
-                                            colors = listOf(
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-                                                Color(0xFF4F46E5)
-                                            )
-                                        )
-                                    ),
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = "SK",
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 28.sp,
-                                    color = Color.White
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }

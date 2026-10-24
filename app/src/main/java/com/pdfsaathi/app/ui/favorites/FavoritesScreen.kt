@@ -2,6 +2,7 @@ package com.pdfsaathi.app.ui.favorites
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -41,13 +42,20 @@ fun FavoritesScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Starred PDFs",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
+                    Column {
+                        Text(
+                            text = "Starred Documents",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
                         )
-                    )
+                        Text(
+                            text = "Quick offline access to your saved files",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             )
         }
