@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +40,7 @@ import com.pdfsaathi.app.ui.components.PdfDocumentCardRow
 @Composable
 fun SearchScreen(
     onOpenReader: (PdfDocument) -> Unit,
+    onBackClick: () -> Unit = {},
     viewModel: SearchViewModel = hiltViewModel()
 ) {
     val query by viewModel.searchQuery.collectAsState()
@@ -46,7 +48,20 @@ fun SearchScreen(
     var documentToDelete by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<PdfDocument?>(null) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Search PDFs") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Search PDFs") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            )
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier

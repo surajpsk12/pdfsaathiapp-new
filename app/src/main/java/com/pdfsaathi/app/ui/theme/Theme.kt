@@ -21,34 +21,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
-// Colors - Stitch Warm Orange Design System
-val PrimaryOrange = Color(0xFFEA580C)
-val PrimaryOrangeContainer = Color(0xFFFFEDD5)
-val SecondaryOrange = Color(0xFFC2410C)
-val LightSurface = Color(0xFFFAFAFA)
-val DarkSurface = Color(0xFF121417)
+// Colors - Premium Vibrant Amber Orange Design System
+val PrimaryOrange = Color(0xFFF97316) // Vibrant, energetic Amber Orange
+val PrimaryOrangeContainer = Color(0xFF2C1810) // Rich deep glass container
+val SecondaryOrange = Color(0xFFFB923C)
+val LightSurface = Color(0xFFF8F9FA)
+val DarkSurface = Color(0xFF0F1115) // Deep premium OLED/Dark background
 val SepiaSurface = Color(0xFFFBF0D9)
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFFFB923C), // Vibrant Light Orange for Dark Mode
-    primaryContainer = Color(0xFF7C2D12),
-    onPrimary = Color(0xFF431407),
+    primary = Color(0xFFF97316),
+    primaryContainer = Color(0xFF2C1810),
+    onPrimary = Color.White,
     onPrimaryContainer = Color(0xFFFFDBC8),
-    secondary = Color(0xFFF97316),
-    secondaryContainer = Color(0xFF431407),
+    secondary = Color(0xFFFB923C),
+    secondaryContainer = Color(0xFF2C1810),
     onSecondaryContainer = Color(0xFFFFDBC8),
     tertiary = Color(0xFFFBBF24),
-    background = Color(0xFF121417),
-    surface = Color(0xFF1A1D23),
+    background = Color(0xFF0F1115),
+    surface = Color(0xFF181B20),
     onBackground = Color(0xFFF1F5F9),
     onSurface = Color(0xFFF1F5F9),
-    surfaceVariant = Color(0xFF262A33),
-    onSurfaceVariant = Color(0xFF94A3B8)
+    surfaceVariant = Color(0xFF22262F),
+    onSurfaceVariant = Color(0xFFA1A1AA)
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryOrange,
-    primaryContainer = PrimaryOrangeContainer,
+    primaryContainer = Color(0xFFFFEDD5),
     onPrimary = Color.White,
     onPrimaryContainer = Color(0xFF9A3412),
     secondary = SecondaryOrange,

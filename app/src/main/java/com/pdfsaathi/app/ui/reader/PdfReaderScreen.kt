@@ -254,7 +254,7 @@ fun PdfReaderScreen(
                             Icon(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = "Download PDF to Phone Storage",
-                                tint = MaterialTheme.colorScheme.onSurface
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -272,7 +272,7 @@ fun PdfReaderScreen(
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Share PDF to any app",
-                                tint = MaterialTheme.colorScheme.onSurface
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -280,7 +280,7 @@ fun PdfReaderScreen(
                         Icon(
                             imageVector = Icons.Default.ViewAgenda,
                             contentDescription = "Viewer Mode",
-                            tint = if (viewerMode == "continuous") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            tint = if (viewerMode == "continuous") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
                         )
                     }
                     IconButton(onClick = {
@@ -291,11 +291,15 @@ fun PdfReaderScreen(
                         }
                         viewModel.changeTheme(nextTheme)
                     }) {
-                        Icon(Icons.Default.Palette, contentDescription = "Change Reader Theme")
+                        Icon(
+                            Icons.Default.Palette,
+                            contentDescription = "Change Reader Theme",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
                 )
             )
         }
@@ -601,9 +605,9 @@ fun PdfReaderScreen(
                 Surface(
                     modifier = Modifier.wrapContentWidth(),
                     shape = RoundedCornerShape(22.dp),
-                    color = Color(0xFF1E1E1E).copy(alpha = 0.90f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
-                    shadowElevation = 8.dp
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                    shadowElevation = 10.dp
                 ) {
                     Column(
                         modifier = Modifier
@@ -618,13 +622,13 @@ fun PdfReaderScreen(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = Color(0xFF818CF8).copy(alpha = 0.22f)
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
                             ) {
                                 Text(
                                     text = "$page / $totalPages",
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = Color(0xFF818CF8)
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
 
@@ -684,8 +688,8 @@ fun PdfReaderScreen(
                             },
                             valueRange = 1f..totalPages.toFloat().coerceAtLeast(1f),
                             colors = SliderDefaults.colors(
-                                thumbColor = Color(0xFF818CF8),
-                                activeTrackColor = Color(0xFF818CF8),
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
                                 inactiveTrackColor = Color.White.copy(alpha = 0.20f)
                             ),
                             modifier = Modifier

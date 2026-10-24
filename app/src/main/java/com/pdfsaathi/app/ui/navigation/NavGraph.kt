@@ -172,7 +172,8 @@ fun PdfNavGraph(
                 }
                 composable(Screen.Search.route) {
                     SearchScreen(
-                        onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) }
+                        onOpenReader = { doc -> navController.navigate(Screen.Reader.createRoute(doc.id)) },
+                        onBackClick = { navController.popBackStack() }
                     )
                 }
                 composable(
