@@ -49,9 +49,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent?.let { handleIncomingIntent(it) }
+        handleIncomingIntent(intent)
     }
 
     private fun handleIncomingIntent(intent: Intent) {
@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                 externalPdfUri.value = uri
             }
         } else if (Intent.ACTION_SEND == action && type == "application/pdf") {
-            (intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))?.let { uri ->
+            androidx.core.content.IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)?.let { uri ->
                 externalPdfUri.value = uri
             }
         }
