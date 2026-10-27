@@ -108,7 +108,7 @@ fun SplashScreen(
         }
 
         Text(
-            text = "v1.0.0 • Ad-Free Experience",
+            text = "Offline PDF Reader",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             modifier = Modifier

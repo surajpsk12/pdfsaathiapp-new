@@ -38,7 +38,7 @@ WHY CHOOSE PDF SAATHI?
   Bookmark essential pages, view recent documents, and manage your PDF files 
   with ease.
 
-• Zero Ads & Clean UI:
+• Clean & Minimal UI:
   Designed with modern Jetpack Compose material UI for a clutter-free reading 
   experience.
 
